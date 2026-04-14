@@ -2,21 +2,21 @@ import { useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
 
 const activityOptions = [
-  { value: '1', description: '거의 움직이지 않음', factor: 1.2 },
+  { value: '1', description: '거의 움직이지 않음(1.2)', factor: 1.2 },
   {
     value: '2',
-    description: '가벼운 운동 (주 1~3회)',
+    description: '가벼운 운동 (주 1~3회)(1.375)',
     factor: 1.375,
   },
   {
     value: '3',
-    description: '보통 운동 (주 3~5회)',
+    description: '보통 운동 (주 3~5회)(1.55)',
     factor: 1.55,
   },
-  { value: '4', description: '많은 운동 (주 6~7회)', factor: 1.725 },
+  { value: '4', description: '많은 운동 (주 6~7회)(1.725)', factor: 1.725 },
   {
     value: '5',
-    description: '매우 많은 운동 또는 육체 노동',
+    description: '매우 많은 운동 또는 육체 노동(1.9)',
     factor: 1.9,
   },
 ]
