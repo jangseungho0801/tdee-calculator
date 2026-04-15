@@ -11,6 +11,8 @@ const Grid = styled.div`
 `
 
 const Item = styled.div`
+  display: grid;
+  gap: 6px;
   padding: 18px;
   border-radius: 20px;
   background: #f8fafc;
@@ -18,22 +20,21 @@ const Item = styled.div`
 `
 
 const Label = styled.div`
+  color: #475569;
   font-size: 0.94rem;
   font-weight: 700;
-  color: #0f172a;
-`
-
-const Percent = styled.div`
-  margin-top: 10px;
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  color: #0f172a;
 `
 
 const Grams = styled.div`
-  margin-top: 4px;
-  color: #475569;
+  color: #111827;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+`
+
+const Percent = styled.div`
+  color: #64748b;
+  font-size: 0.98rem;
 `
 
 type Props = {
@@ -45,18 +46,18 @@ function MacroSummary({ macros }: Props) {
     <Grid>
       <Item>
         <Label>탄수화물</Label>
-        <Percent>{macros.carbsPercent}%</Percent>
         <Grams>{macros.carbsGrams.toLocaleString('ko-KR')}g</Grams>
+        <Percent>{macros.carbsPercent}%</Percent>
       </Item>
       <Item>
         <Label>단백질</Label>
-        <Percent>{macros.proteinPercent}%</Percent>
         <Grams>{macros.proteinGrams.toLocaleString('ko-KR')}g</Grams>
+        <Percent>{macros.proteinPercent}%</Percent>
       </Item>
       <Item>
         <Label>지방</Label>
-        <Percent>{macros.fatPercent}%</Percent>
         <Grams>{macros.fatGrams.toLocaleString('ko-KR')}g</Grams>
+        <Percent>{macros.fatPercent}%</Percent>
       </Item>
     </Grid>
   )

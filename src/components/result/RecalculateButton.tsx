@@ -7,7 +7,7 @@ type Props = {
 function RecalculateButton({ onClick }: Props) {
   return (
     <Button type="button" $variant="secondary" $fullWidth onClick={onClick}>
-      다시 계산하기
+      입력 다시하기
     </Button>
   )
 }
