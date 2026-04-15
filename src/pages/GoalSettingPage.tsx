@@ -176,7 +176,7 @@ const DURATION_WARNING_COPY: Record<GoalType, string> = {
 
 const RATE_WARNING_COPY: Record<'cut' | 'bulk', string> = {
   cut: '너무 급격한 감량은 건강에 좋지 않아요. 한 번만 다시 생각해보세요',
-  bulk: '너무 급격한 벌크업은 체크가 중요해서 한 번만 다시 생각해보세요',
+  bulk: '너무 급격한 벌크업은 살크업 가능성이 높아요, 한번만 다시 생각해보세요',
 }
 
 const UNIT_LABELS: Record<GoalDurationUnit, string> = {
