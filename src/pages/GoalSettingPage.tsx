@@ -1,9 +1,8 @@
 import type { ChangeEvent, FormEvent } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import { navigateTo } from '../app/router/AppRouter.tsx'
 import Button from '../components/common/Button.tsx'
-import NumberInputField from '../components/common/NumberInputField.tsx'
 import PageLayout from '../components/common/PageLayout.tsx'
 import SectionCard from '../components/common/SectionCard.tsx'
 import { ROUTES } from '../constants/routes'
@@ -15,7 +14,7 @@ import type {
 } from '../types/calculator'
 
 const PageShell = styled.div`
-  width: min(100%, 720px);
+  width: min(100%, 680px);
   margin: 0 auto;
   display: grid;
   gap: 20px;
@@ -23,10 +22,10 @@ const PageShell = styled.div`
 
 const Card = styled(SectionCard)`
   display: grid;
-  gap: 20px;
+  gap: 24px;
 `
 
-const Header = styled.div`
+const Header = styled.header`
   display: grid;
   gap: 10px;
 `
@@ -39,16 +38,16 @@ const Eyebrow = styled.span`
 
 const Title = styled.h1`
   margin: 0;
-  color: #111827;
-  font-size: clamp(2rem, 4vw, 3rem);
-  line-height: 1.1;
-  letter-spacing: -0.05em;
+  color: #0f172a;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  line-height: 1.15;
+  letter-spacing: -0.04em;
 `
 
-const Description = styled.p`
+const CurrentWeightNote = styled.p`
   margin: 0;
   color: #475569;
-  line-height: 1.7;
+  font-size: 0.95rem;
 `
 
 const FieldGrid = styled.div`
@@ -56,24 +55,64 @@ const FieldGrid = styled.div`
   gap: 18px;
 `
 
-const DurationRow = styled.div`
-  display: grid;
-  gap: 12px;
-
-  @media (min-width: 640px) {
-    grid-template-columns: minmax(0, 1fr) 160px;
-    align-items: end;
-  }
-`
-
-const SelectField = styled.label`
+const Field = styled.label`
   display: grid;
   gap: 8px;
+`
+
+const LabelRow = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 `
 
 const Label = styled.span`
   font-weight: 700;
   color: #0f172a;
+`
+
+const InlineInfo = styled.span`
+  color: #64748b;
+  font-size: 0.92rem;
+`
+
+const Input = styled.input`
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.36);
+  background: rgba(248, 250, 252, 0.88);
+  color: #0f172a;
+  outline: none;
+
+  &:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+  }
+`
+
+const InputWrap = styled.span`
+  position: relative;
+  display: block;
+`
+
+const Suffix = styled.span`
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  color: #64748b;
+  font-size: 0.92rem;
+`
+
+const DurationRow = styled.div`
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 116px;
+  gap: 12px;
+  align-items: end;
 `
 
 const Select = styled.select`
@@ -92,41 +131,24 @@ const Select = styled.select`
   }
 `
 
+const ErrorText = styled.span`
+  color: #b42318;
+  font-size: 0.92rem;
+`
+
 const FooterActions = styled.div`
   display: grid;
-  gap: 12px;
-`
-
-const SecondaryButton = styled(Button)`
-  border: 1px solid rgba(148, 163, 184, 0.5);
-`
-
-const SuccessCard = styled(SectionCard)`
-  display: grid;
-  gap: 8px;
-  background: linear-gradient(180deg, #eff6ff 0%, #f8fbff 100%);
-  border-color: rgba(191, 219, 254, 0.9);
-`
-
-const SuccessTitle = styled.strong`
-  color: #111827;
-  font-size: 1.05rem;
-`
-
-const SuccessText = styled.p`
-  margin: 0;
-  color: #475569;
 `
 
 const Overlay = styled.div`
   position: fixed;
   inset: 0;
+  z-index: 20;
   display: grid;
   place-items: center;
   padding: 24px;
   background: rgba(15, 23, 42, 0.36);
   backdrop-filter: blur(6px);
-  z-index: 20;
 `
 
 const ModalCard = styled.section`
@@ -162,27 +184,25 @@ const ModalActions = styled.div`
   }
 `
 
+const SecondaryButton = styled(Button)`
+  border: 1px solid rgba(148, 163, 184, 0.5);
+`
+
 const QUESTION_COPY: Record<GoalType, string> = {
-  cut: '언제까지 몇 kg를 빼고 싶으세요?',
+  cut: '언제까지 몇kg을 빼고 싶으세요?',
   maintain: '언제까지 지금 체중을 유지하고 싶으세요?',
-  bulk: '언제까지 몇 kg를 늘리고 싶으세요?',
+  bulk: '언제까지 몇kg을 늘리고 싶으세요?',
 }
 
 const DURATION_WARNING_COPY: Record<GoalType, string> = {
-  cut: '우선 최대 3개월 동안 식단을 진행하고 다시 목표를 설정해보세요',
-  maintain: '우선 최대 3개월 동안 유지 식단을 진행하고 다시 목표를 설정해보세요',
-  bulk: '우선 최대 3개월 동안 식단을 진행하고 다시 목표를 설정해보세요',
+  cut: '우선 최대 3개월 동안 식단을 진행하고 다시 목표를 설정하세요',
+  maintain: '우선 최대 3개월 동안 유지 식단을 진행하고 다시 목표를 설정하세요',
+  bulk: '우선 최대 3개월 동안 식단을 진행하고 다시 목표를 설정하세요',
 }
 
 const RATE_WARNING_COPY: Record<'cut' | 'bulk', string> = {
-  cut: '너무 급격한 감량은 건강에 좋지 않아요. 한 번만 다시 생각해보세요',
+  cut: '너무 급격한 감량은 건강에 좋지 않아요, 한번만 다시 생각해보세요',
   bulk: '너무 급격한 벌크업은 살크업 가능성이 높아요, 한번만 다시 생각해보세요',
-}
-
-const UNIT_LABELS: Record<GoalDurationUnit, string> = {
-  day: '일',
-  week: '주',
-  month: '개월',
 }
 
 type GoalSettingErrors = {
@@ -190,8 +210,19 @@ type GoalSettingErrors = {
   durationValue?: string
 }
 
-function sanitizeNumericInput(value: string) {
-  return value.replace(/[^0-9.]/g, '')
+function sanitizeWeightInput(value: string) {
+  const sanitized = value.replace(/[^0-9.]/g, '')
+  const [integerPart = '', ...decimalParts] = sanitized.split('.')
+
+  if (decimalParts.length === 0) {
+    return integerPart
+  }
+
+  return `${integerPart}.${decimalParts.join('')}`
+}
+
+function sanitizeDurationInput(value: string) {
+  return value.replace(/[^0-9]/g, '')
 }
 
 function convertDurationToDays(value: number, unit: GoalDurationUnit) {
@@ -206,6 +237,14 @@ function convertDurationToDays(value: number, unit: GoalDurationUnit) {
   return value * 30
 }
 
+function formatWeight(weight: number) {
+  if (!Number.isFinite(weight)) {
+    return '-'
+  }
+
+  return Number.isInteger(weight) ? weight.toString() : weight.toFixed(1)
+}
+
 function validateGoalSettingData(
   goalType: GoalType,
   goalSettingData: GoalSettingData,
@@ -215,7 +254,7 @@ function validateGoalSettingData(
 
   if (goalType !== 'maintain') {
     if (!goalSettingData.targetWeight.trim()) {
-      errors.targetWeight = '목표 체중을 입력해 주세요.'
+      errors.targetWeight = '목표 체중을 입력해주세요.'
     } else {
       const targetWeight = Number(goalSettingData.targetWeight)
 
@@ -230,7 +269,7 @@ function validateGoalSettingData(
   }
 
   if (!goalSettingData.durationValue.trim()) {
-    errors.durationValue = '목표 기간을 입력해 주세요.'
+    errors.durationValue = '목표 기간을 입력해주세요.'
   } else {
     const durationValue = Number(goalSettingData.durationValue)
 
@@ -254,7 +293,10 @@ function collectWarnings(
     return warnings
   }
 
-  const durationDays = convertDurationToDays(durationValue, goalSettingData.durationUnit)
+  const durationDays = convertDurationToDays(
+    durationValue,
+    goalSettingData.durationUnit,
+  )
 
   if (durationDays > 90) {
     warnings.push(DURATION_WARNING_COPY[goalType])
@@ -266,7 +308,7 @@ function collectWarnings(
 
   const targetWeight = Number(goalSettingData.targetWeight)
 
-  if (!Number.isFinite(targetWeight) || targetWeight <= 0) {
+  if (!Number.isFinite(targetWeight) || targetWeight <= 0 || durationDays <= 0) {
     return warnings
   }
 
@@ -291,15 +333,24 @@ function GoalSettingPage() {
   const [errors, setErrors] = useState<GoalSettingErrors>({})
   const [warningMessages, setWarningMessages] = useState<string[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
 
-  const currentWeight = useMemo(() => Number(inputData.weight), [inputData.weight])
+  const currentWeight = Number(inputData.weight)
+  const formattedCurrentWeight = formatWeight(currentWeight)
 
   useEffect(() => {
     if (!resultData) {
       navigateTo(ROUTES.result)
     }
   }, [resultData])
+
+  useEffect(() => {
+    if (selectedGoal === 'maintain' && goalSettingData.targetWeight) {
+      setGoalSettingData({
+        ...goalSettingData,
+        targetWeight: '',
+      })
+    }
+  }, [goalSettingData, selectedGoal, setGoalSettingData])
 
   if (!resultData) {
     return null
@@ -314,12 +365,12 @@ function GoalSettingPage() {
     if (name === 'targetWeight') {
       nextGoalSettingData = {
         ...goalSettingData,
-        targetWeight: sanitizeNumericInput(value),
+        targetWeight: sanitizeWeightInput(value),
       }
     } else if (name === 'durationValue') {
       nextGoalSettingData = {
         ...goalSettingData,
-        durationValue: sanitizeNumericInput(value),
+        durationValue: sanitizeDurationInput(value),
       }
     } else if (name === 'durationUnit') {
       nextGoalSettingData = {
@@ -329,18 +380,16 @@ function GoalSettingPage() {
     }
 
     setGoalSettingData(nextGoalSettingData)
-    setIsSubmitted(false)
-
     setErrors((current) => ({
       ...current,
       [name]: '',
     }))
   }
 
-  const finalizeSubmit = () => {
+  const proceedToNextStep = () => {
     setIsModalOpen(false)
     setWarningMessages([])
-    setIsSubmitted(true)
+    navigateTo(ROUTES.result)
   }
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -371,7 +420,7 @@ function GoalSettingPage() {
       return
     }
 
-    finalizeSubmit()
+    proceedToNextStep()
   }
 
   return (
@@ -381,36 +430,50 @@ function GoalSettingPage() {
           <Header>
             <Eyebrow>목표 설정</Eyebrow>
             <Title>{QUESTION_COPY[selectedGoal]}</Title>
-            <Description>
-              무리한 목표는 한 번 더 확인하고, 현실적인 기간 안에서 방향을
-              정해 보세요.
-            </Description>
+            {selectedGoal === 'maintain' ? (
+              <CurrentWeightNote>현재 체중: {formattedCurrentWeight}kg</CurrentWeightNote>
+            ) : null}
           </Header>
+
           <FieldGrid>
             {selectedGoal !== 'maintain' ? (
-              <NumberInputField
-                id="targetWeight"
-                name="targetWeight"
-                label="목표 체중"
-                placeholder="예: 64"
-                suffix="kg"
-                value={goalSettingData.targetWeight}
-                error={errors.targetWeight}
-                onChange={handleFieldChange}
-              />
+              <Field htmlFor="targetWeight">
+                <LabelRow>
+                  <Label>목표 체중</Label>
+                  <InlineInfo>현재 체중: {formattedCurrentWeight}kg</InlineInfo>
+                </LabelRow>
+                <InputWrap>
+                  <Input
+                    id="targetWeight"
+                    name="targetWeight"
+                    type="number"
+                    min="0"
+                    inputMode="decimal"
+                    placeholder="예: 64"
+                    value={goalSettingData.targetWeight}
+                    onChange={handleFieldChange}
+                  />
+                  <Suffix>kg</Suffix>
+                </InputWrap>
+                {errors.targetWeight ? (
+                  <ErrorText>{errors.targetWeight}</ErrorText>
+                ) : null}
+              </Field>
             ) : null}
-            <DurationRow>
-              <NumberInputField
-                id="durationValue"
-                name="durationValue"
-                label="목표 기간"
-                placeholder="예: 8"
-                value={goalSettingData.durationValue}
-                error={errors.durationValue}
-                onChange={handleFieldChange}
-              />
-              <SelectField htmlFor="durationUnit">
-                <Label>단위</Label>
+
+            <Field htmlFor="durationValue">
+              <Label>목표 기간</Label>
+              <DurationRow>
+                <Input
+                  id="durationValue"
+                  name="durationValue"
+                  type="number"
+                  min="0"
+                  inputMode="numeric"
+                  placeholder="예: 8"
+                  value={goalSettingData.durationValue}
+                  onChange={handleFieldChange}
+                />
                 <Select
                   id="durationUnit"
                   name="durationUnit"
@@ -421,44 +484,25 @@ function GoalSettingPage() {
                   <option value="week">주</option>
                   <option value="month">개월</option>
                 </Select>
-              </SelectField>
-            </DurationRow>
+              </DurationRow>
+              {errors.durationValue ? (
+                <ErrorText>{errors.durationValue}</ErrorText>
+              ) : null}
+            </Field>
           </FieldGrid>
+
           <FooterActions>
             <Button type="submit" $fullWidth>
               다음
             </Button>
-            <SecondaryButton
-              type="button"
-              $variant="secondary"
-              $fullWidth
-              onClick={() => navigateTo(ROUTES.result)}
-            >
-              결과로 돌아가기
-            </SecondaryButton>
           </FooterActions>
         </Card>
-
-        {isSubmitted ? (
-          <SuccessCard>
-            <SuccessTitle>목표 설정을 저장했어요</SuccessTitle>
-            <SuccessText>
-              선택한 방향은 {selectedGoal === 'cut'
-                ? '다이어트'
-                : selectedGoal === 'maintain'
-                  ? '유지'
-                  : '벌크업'}
-              이고, 기간은 {goalSettingData.durationValue}
-              {UNIT_LABELS[goalSettingData.durationUnit]}입니다.
-            </SuccessText>
-          </SuccessCard>
-        ) : null}
       </PageShell>
 
       {isModalOpen ? (
         <Overlay>
           <ModalCard>
-            <ModalTitle>한 번 더 확인해보세요</ModalTitle>
+            <ModalTitle>한번 더 확인해보세요</ModalTitle>
             <WarningList>
               {warningMessages.map((message) => (
                 <li key={message}>{message}</li>
@@ -473,7 +517,7 @@ function GoalSettingPage() {
               >
                 수정하기
               </SecondaryButton>
-              <Button type="button" $fullWidth onClick={finalizeSubmit}>
+              <Button type="button" $fullWidth onClick={proceedToNextStep}>
                 그대로 진행하기
               </Button>
             </ModalActions>
