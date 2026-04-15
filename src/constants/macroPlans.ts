@@ -11,9 +11,9 @@ export const MACRO_PLANS: Record<
   }
 > = {
   cut: {
-    carbs: 35,
-    protein: 35,
-    fat: 30,
+    carbs: 90,
+    protein: 5,
+    fat: 5,
     headline: '감량 중심 플랜',
     description: '단백질 비중을 높여 포만감과 회복을 우선하는 구성이에요.',
   },
