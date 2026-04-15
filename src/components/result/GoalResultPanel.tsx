@@ -30,12 +30,45 @@ const CaloriesValue = styled.strong`
   letter-spacing: -0.05em;
 `
 
+const CopyBlock = styled.div`
+  display: grid;
+  gap: 6px;
+`
+
+const CopyTitle = styled.p`
+  margin: 0;
+  color: #111827;
+  font-weight: 700;
+`
+
+const CopyDescription = styled.p`
+  margin: 0;
+  color: #64748b;
+`
+
 type Props = {
   goalType: GoalType
   goalResult: GoalResult
 }
 
-function GoalResultPanel({ goalType: _goalType, goalResult }: Props) {
+const GOAL_COPY: Record<GoalType, { title: string; description: string }> = {
+  cut: {
+    title: '다이어트를 위한 하루 권장 칼로리예요',
+    description: '처음부터 너무 많이 줄이면 오래 유지하기 어려워요',
+  },
+  maintain: {
+    title: '현재 체중을 유지하기 위한 하루 권장 칼로리예요',
+    description: '활동량이 달라지면 이 기준도 달라질 수 있어요',
+  },
+  bulk: {
+    title: '벌크업을 위한 하루 권장 칼로리예요',
+    description: '무작정 많이 먹기보다 천천히 늘리는 게 더 좋아요',
+  },
+}
+
+function GoalResultPanel({ goalType, goalResult }: Props) {
+  const copy = GOAL_COPY[goalType]
+
   return (
     <Panel>
       <CaloriesCard>
@@ -43,6 +76,10 @@ function GoalResultPanel({ goalType: _goalType, goalResult }: Props) {
         <CaloriesValue>{goalResult.calories.toLocaleString('ko-KR')} kcal</CaloriesValue>
       </CaloriesCard>
       <MacroSummary macros={goalResult.macros} />
+      <CopyBlock>
+        <CopyTitle>{copy.title}</CopyTitle>
+        <CopyDescription>{copy.description}</CopyDescription>
+      </CopyBlock>
     </Panel>
   )
 }
