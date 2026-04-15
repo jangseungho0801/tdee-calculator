@@ -9,6 +9,7 @@ type Props = {
   value: string
   error?: string
   suffix?: string
+  description?: string
   onChange: (event: ChangeEvent<HTMLInputElement>) => void
 }
 
@@ -20,6 +21,11 @@ const Wrapper = styled.label`
 const LabelText = styled.span`
   font-weight: 700;
   color: #0f172a;
+`
+
+const DescriptionText = styled.span`
+  color: #64748b;
+  font-size: 0.92rem;
 `
 
 const InputWrap = styled.span`
@@ -65,11 +71,13 @@ function NumberInputField({
   value,
   error,
   suffix,
+  description,
   onChange,
 }: Props) {
   return (
     <Wrapper htmlFor={id}>
       <LabelText>{label}</LabelText>
+      {description ? <DescriptionText>{description}</DescriptionText> : null}
       <InputWrap>
         <Input
           id={id}

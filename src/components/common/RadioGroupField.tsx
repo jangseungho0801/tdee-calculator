@@ -13,6 +13,7 @@ type Props = {
   options: Option[]
   value: string
   error?: string
+  columns?: 1 | 2
   onChange: (event: ChangeEvent<HTMLInputElement>) => void
 }
 
@@ -31,9 +32,16 @@ const Legend = styled.legend`
   color: #0f172a;
 `
 
-const OptionGrid = styled.div`
+const OptionGrid = styled.div<{ $columns: 1 | 2 }>`
   display: grid;
   gap: 12px;
+
+  ${({ $columns }) =>
+    $columns === 2
+      ? `
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  `
+      : ''}
 `
 
 const OptionCard = styled.label<{ $checked: boolean }>`
@@ -86,12 +94,13 @@ function RadioGroupField({
   options,
   value,
   error,
+  columns = 1,
   onChange,
 }: Props) {
   return (
     <Wrapper>
       <Legend>{legend}</Legend>
-      <OptionGrid>
+      <OptionGrid $columns={columns}>
         {options.map((option) => {
           const isChecked = value === option.value
 

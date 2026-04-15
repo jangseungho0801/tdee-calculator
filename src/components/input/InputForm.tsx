@@ -13,41 +13,36 @@ import { calculateGoalCalories } from '../../utils/calculations/goalCalories'
 import { calculateMacros } from '../../utils/calculations/macros'
 import { calculateTdee } from '../../utils/calculations/tdee'
 import AdditionalInfoSection from './AdditionalInfoSection.tsx'
-import ActivityLevelSection from './ActivityLevelSection.tsx'
 import BasicInfoSection from './BasicInfoSection.tsx'
-import BodyInfoSection from './BodyInfoSection.tsx'
 import CalculateButton from './CalculateButton.tsx'
 
 const Form = styled.form`
+  width: min(100%, 720px);
+  margin: 0 auto;
   display: grid;
-  gap: 18px;
+  gap: 20px;
 `
 
 const Header = styled.div`
   display: grid;
-  gap: 8px;
-  margin-bottom: 8px;
-`
-
-const Eyebrow = styled.span`
-  font-size: 0.92rem;
-  font-weight: 800;
-  color: #1d4ed8;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  gap: 10px;
+  margin-bottom: 6px;
 `
 
 const Title = styled.h1`
   margin: 0;
-  font-size: clamp(2rem, 3vw, 3.4rem);
-  line-height: 1;
+  color: #111827;
+  font-size: clamp(2rem, 4vw, 3.1rem);
+  line-height: 1.12;
   letter-spacing: -0.05em;
-  color: #0f172a;
 `
 
 const Description = styled.p`
   margin: 0;
-  color: #475569;
+  max-width: 620px;
+  color: #4b5563;
+  font-size: 1rem;
+  line-height: 1.7;
 `
 
 const ErrorBanner = styled.div`
@@ -56,6 +51,12 @@ const ErrorBanner = styled.div`
   background: #fef2f2;
   color: #b42318;
   border: 1px solid rgba(244, 63, 94, 0.22);
+`
+
+const FooterAction = styled.div`
+  position: sticky;
+  bottom: 20px;
+  z-index: 2;
 `
 
 type Props = {
@@ -71,13 +72,13 @@ function sanitizeNumericInput(value: string) {
 
 function validatePositiveField(value: string, label: string) {
   if (!value.trim()) {
-    return `${label}을(를) 입력해 주세요.`
+    return `${label}를 입력해 주세요`
   }
 
   const numericValue = Number(value)
 
   if (!Number.isFinite(numericValue) || numericValue <= 0) {
-    return `${label}은(는) 0보다 큰 숫자여야 합니다.`
+    return `${label}는 0보다 큰 숫자여야 합니다`
   }
 
   return ''
@@ -87,24 +88,24 @@ function validateInputData(inputData: InputData): ValidationErrors {
   const errors: ValidationErrors = {}
 
   if (!inputData.gender) {
-    errors.gender = '성별을 선택해 주세요.'
+    errors.gender = '성별을 선택해 주세요'
   }
 
   errors.age = validatePositiveField(inputData.age, '나이')
   errors.height = validatePositiveField(inputData.height, '키')
-  errors.weight = validatePositiveField(inputData.weight, '몸무게')
+  errors.weight = validatePositiveField(inputData.weight, '현재 체중')
 
   if (!inputData.activityLevel) {
-    errors.activityLevel = '활동량을 선택해 주세요.'
+    errors.activityLevel = '평소 활동량을 선택해 주세요'
   }
 
   if (inputData.bodyFatPercentage.trim()) {
     const bodyFatValue = Number(inputData.bodyFatPercentage)
 
     if (!Number.isFinite(bodyFatValue) || bodyFatValue <= 0) {
-      errors.bodyFatPercentage = '체지방률은 0보다 큰 숫자여야 합니다.'
+      errors.bodyFatPercentage = '체지방률은 0보다 큰 숫자여야 합니다'
     } else if (bodyFatValue >= 100) {
-      errors.bodyFatPercentage = '체지방률은 100 미만이어야 합니다.'
+      errors.bodyFatPercentage = '체지방률은 100 미만이어야 합니다'
     }
   }
 
@@ -188,7 +189,7 @@ function InputForm({
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors)
-      setErrorBanner('입력값을 확인한 뒤 다시 계산해 주세요.')
+      setErrorBanner('입력값을 확인한 뒤 다시 진행해 주세요')
       return
     }
 
@@ -204,27 +205,22 @@ function InputForm({
   return (
     <Form onSubmit={handleSubmit}>
       <Header>
-        <Eyebrow>Input</Eyebrow>
-        <Title>목표에 맞는 권장 섭취량을 계산하세요</Title>
+        <Title>닭가슴살부터 먹지 말고, 기준부터 확인하세요</Title>
         <Description>
-          필수 정보와 활동량을 입력하면 감량, 유지, 벌크업 기준 칼로리와 탄단지를
-          각각 제공합니다.
+          기본 정보와 활동량을 입력하면 내 몸에 맞는 섭취 기준을 계산할 수
+          있어요
         </Description>
       </Header>
       {errorBanner ? <ErrorBanner>{errorBanner}</ErrorBanner> : null}
       <BasicInfoSection inputData={inputData} errors={errors} onChange={handleChange} />
-      <BodyInfoSection inputData={inputData} errors={errors} onChange={handleChange} />
-      <ActivityLevelSection
-        inputData={inputData}
-        errors={errors}
-        onChange={handleChange}
-      />
       <AdditionalInfoSection
         inputData={inputData}
         errors={errors}
         onChange={handleChange}
       />
-      <CalculateButton />
+      <FooterAction>
+        <CalculateButton />
+      </FooterAction>
     </Form>
   )
 }
