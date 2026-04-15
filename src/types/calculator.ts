@@ -9,6 +9,8 @@ export type ActivityLevelId =
 
 export type GoalType = 'cut' | 'maintain' | 'bulk'
 
+export type GoalDurationUnit = 'day' | 'week' | 'month'
+
 export type InputData = {
   gender: Gender | ''
   age: string
@@ -41,6 +43,12 @@ export type GoalResult = {
   macros: MacroResult
 }
 
+export type GoalSettingData = {
+  targetWeight: string
+  durationValue: string
+  durationUnit: GoalDurationUnit
+}
+
 export type CalculationResult = {
   bmr: number
   tdee: number
@@ -52,7 +60,11 @@ export type ValidationErrors = Partial<Record<keyof InputData, string>>
 export type TdeeCalculatorContextValue = {
   inputData: InputData
   resultData: CalculationResult | null
+  selectedGoal: GoalType
+  goalSettingData: GoalSettingData
   setInputData: (value: InputData) => void
   setResultData: (value: CalculationResult | null) => void
+  setSelectedGoal: (value: GoalType) => void
+  setGoalSettingData: (value: GoalSettingData) => void
   resetCalculator: () => void
 }

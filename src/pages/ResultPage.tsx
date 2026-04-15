@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import styled from 'styled-components'
 import { navigateTo } from '../app/router/AppRouter.tsx'
+import Button from '../components/common/Button.tsx'
 import PageLayout from '../components/common/PageLayout.tsx'
 import GoalResultPanel from '../components/result/GoalResultPanel.tsx'
 import GoalTabs from '../components/result/GoalTabs.tsx'
@@ -8,7 +9,6 @@ import RecalculateButton from '../components/result/RecalculateButton.tsx'
 import ResultHeader from '../components/result/ResultHeader.tsx'
 import { ROUTES } from '../constants/routes'
 import { useTdeeCalculator } from '../hooks/useTdeeCalculator'
-import type { GoalType } from '../types/calculator'
 
 const PageShell = styled.div`
   width: min(100%, 760px);
@@ -17,9 +17,13 @@ const PageShell = styled.div`
   gap: 18px;
 `
 
+const ActionStack = styled.div`
+  display: grid;
+  gap: 12px;
+`
+
 function ResultPage() {
-  const { resultData } = useTdeeCalculator()
-  const [activeGoal, setActiveGoal] = useState<GoalType>('cut')
+  const { resultData, selectedGoal, setSelectedGoal } = useTdeeCalculator()
 
   useEffect(() => {
     if (!resultData) {
@@ -35,12 +39,21 @@ function ResultPage() {
     <PageLayout>
       <PageShell>
         <ResultHeader tdee={resultData.tdee} bmr={resultData.bmr} />
-        <GoalTabs activeGoal={activeGoal} onChange={setActiveGoal} />
+        <GoalTabs activeGoal={selectedGoal} onChange={setSelectedGoal} />
         <GoalResultPanel
-          goalType={activeGoal}
-          goalResult={resultData.goals[activeGoal]}
+          goalType={selectedGoal}
+          goalResult={resultData.goals[selectedGoal]}
         />
-        <RecalculateButton onClick={() => navigateTo(ROUTES.input)} />
+        <ActionStack>
+          <Button
+            type="button"
+            $fullWidth
+            onClick={() => navigateTo(ROUTES.goal)}
+          >
+            다음
+          </Button>
+          <RecalculateButton onClick={() => navigateTo(ROUTES.input)} />
+        </ActionStack>
       </PageShell>
     </PageLayout>
   )

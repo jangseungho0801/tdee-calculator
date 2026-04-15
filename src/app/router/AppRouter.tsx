@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ROUTES } from '../../constants/routes'
+import GoalSettingPage from '../../pages/GoalSettingPage.tsx'
 import InputPage from '../../pages/InputPage.tsx'
 import IntroPage from '../../pages/IntroPage.tsx'
 import ResultPage from '../../pages/ResultPage.tsx'
@@ -38,6 +39,10 @@ function AppRouter() {
 
   if (pathname === ROUTES.result) {
     return <ResultPage />
+  }
+
+  if (pathname === ROUTES.goal) {
+    return <GoalSettingPage />
   }
 
   return <IntroPage />
