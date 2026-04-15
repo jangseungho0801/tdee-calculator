@@ -17,7 +17,7 @@ function IntroPage() {
       <Stack>
         <IntroHero
           title="당신의 루틴에 맞춘 TDEE 계산기"
-          description="감량, 유지, 벌크업까지 한 번에 비교하고 체지방률 입력 여부에 따라 계산 공식을 자동으로 분기합니다."
+          description="감량, 유지, 벌크업까지 한 번에 비교하고 체지방률 입력 여부에 따라 계산 공식을 자동으로 분기"
         />
         <IntroHighlights
           items={[
