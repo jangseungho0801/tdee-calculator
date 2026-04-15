@@ -104,7 +104,7 @@ function IntroPage() {
     <IntroShell>
       <CenterCard>
         <ServiceName>OnFit 식단 관리</ServiceName>
-        <Title>언제까지 닭가슴살만 드실거에요?</Title>
+        <Title>언제까지 닭가슴살만<br/>드실거에요?</Title>
         <Description>살 빼려면 어떤걸 얼마나 먹어야할지 알아보세요</Description>
         <StartButton type="button" onClick={() => navigateTo(ROUTES.input)}>
           식단관리 시작하기
