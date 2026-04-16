@@ -55,6 +55,10 @@ export type MealStructureItem = {
   time: string
 }
 
+export type MealStructureTabKey = 'weekday' | 'weekend'
+
+export type MealStructureByTab = Record<MealStructureTabKey, MealStructureItem[]>
+
 export type CalculationResult = {
   bmr: number
   tdee: number
@@ -68,15 +72,15 @@ export type TdeeCalculatorContextValue = {
   resultData: CalculationResult | null
   selectedGoal: GoalType
   goalSettingData: GoalSettingData
-  mealStructure: MealStructureItem[]
+  mealStructure: MealStructureByTab
   setInputData: (value: InputData) => void
   setResultData: (value: CalculationResult | null) => void
   setSelectedGoal: (value: GoalType) => void
   setGoalSettingData: (value: GoalSettingData) => void
   setMealStructure: (
     value:
-      | MealStructureItem[]
-      | ((current: MealStructureItem[]) => MealStructureItem[]),
+      | MealStructureByTab
+      | ((current: MealStructureByTab) => MealStructureByTab),
   ) => void
   resetCalculator: () => void
 }

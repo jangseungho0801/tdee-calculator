@@ -13,7 +13,9 @@ import type {
   GoalDurationUnit,
   GoalSettingData,
   GoalType,
+  MealStructureByTab,
   MealStructureItem,
+  MealStructureTabKey,
 } from '../types/calculator'
 
 const PageShell = styled.div`
@@ -107,6 +109,41 @@ const SectionTitle = styled.h2`
   font-size: 1.08rem;
   line-height: 1.4;
   letter-spacing: -0.02em;
+`
+
+const MealCardHeader = styled.div`
+  display: grid;
+  gap: 14px;
+`
+
+const TabList = styled.div`
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: fit-content;
+  min-width: 220px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(241, 245, 249, 0.92);
+`
+
+const TabButton = styled.button<{ $active: boolean }>`
+  min-height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: ${({ $active }) =>
+    $active ? 'linear-gradient(135deg, #111827, #1d4ed8)' : 'transparent'};
+  color: ${({ $active }) => ($active ? '#ffffff' : '#64748b')};
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+  box-shadow: ${({ $active }) =>
+    $active ? '0 10px 24px rgba(29, 78, 216, 0.18)' : 'none'};
 `
 
 const MealList = styled.div`
@@ -301,7 +338,13 @@ type MealItemErrors = {
   time?: string
 }
 
+type MealErrorsByTab = Record<MealStructureTabKey, MealItemErrors[]>
+
 const TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$/
+const MEAL_TAB_LABELS: Record<MealStructureTabKey, string> = {
+  weekday: '평일',
+  weekend: '주말',
+}
 
 function sanitizeWeightInput(value: string) {
   const sanitized = value.replace(/[^0-9.]/g, '')
@@ -340,9 +383,12 @@ function hasMealErrors(mealErrors: MealItemErrors[]) {
   return mealErrors.some((error) => error.name || error.time)
 }
 
-function getNextMealId(mealStructure: MealStructureItem[]) {
+function getNextMealId(
+  mealStructure: MealStructureItem[],
+  tab: MealStructureTabKey,
+) {
   const maxId = mealStructure.reduce((currentMax, meal) => {
-    const numericId = Number(meal.id.replace('meal-', ''))
+    const numericId = Number(meal.id.replace(`${tab}-meal-`, ''))
 
     if (!Number.isFinite(numericId)) {
       return currentMax
@@ -354,11 +400,18 @@ function getNextMealId(mealStructure: MealStructureItem[]) {
   return maxId + 1
 }
 
-function createMealItem(id: number): MealStructureItem {
+function createMealItemForTab(id: number, tab: MealStructureTabKey): MealStructureItem {
   return {
-    id: `meal-${id}`,
+    id: `${tab}-meal-${id}`,
     name: `식사 ${id}`,
     time: '08:00',
+  }
+}
+
+function createEmptyMealErrors(): MealErrorsByTab {
+  return {
+    weekday: [],
+    weekend: [],
   }
 }
 
@@ -526,12 +579,15 @@ function GoalSettingPage() {
   } = useTdeeCalculator()
   const formRef = useRef<HTMLFormElement | null>(null)
   const [errors, setErrors] = useState<GoalSettingErrors>({})
-  const [mealErrors, setMealErrors] = useState<MealItemErrors[]>([])
+  const [activeMealTab, setActiveMealTab] = useState<MealStructureTabKey>('weekday')
+  const [mealErrors, setMealErrors] = useState<MealErrorsByTab>(createEmptyMealErrors)
   const [warningMessages, setWarningMessages] = useState<string[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const currentWeight = Number(inputData.weight)
   const formattedCurrentWeight = formatWeight(currentWeight)
+  const activeMeals = mealStructure[activeMealTab]
+  const activeMealErrors = mealErrors[activeMealTab] ?? []
 
   useEffect(() => {
     if (!resultData) {
@@ -587,14 +643,24 @@ function GoalSettingPage() {
     event: ChangeEvent<HTMLInputElement>,
   ) => {
     setMealStructure(
-      mealStructure.map((meal) =>
-        meal.id === mealId ? { ...meal, name: event.target.value } : meal,
-      ),
+      Object.fromEntries(
+        Object.entries(mealStructure).map(([tabKey, meals]) => [
+          tabKey,
+          tabKey === activeMealTab
+            ? meals.map((meal) =>
+                meal.id === mealId ? { ...meal, name: event.target.value } : meal,
+              )
+            : meals,
+        ]),
+      ) as MealStructureByTab,
     )
     setMealErrors((current) =>
-      current.map((error, index) =>
-        mealStructure[index]?.id === mealId ? { ...error, name: undefined } : error,
-      ),
+      ({
+        ...current,
+        [activeMealTab]: (current[activeMealTab] ?? []).map((error, index) =>
+          activeMeals[index]?.id === mealId ? { ...error, name: undefined } : error,
+        ),
+      }) as MealErrorsByTab,
     )
   }
 
@@ -603,46 +669,66 @@ function GoalSettingPage() {
     event: ChangeEvent<HTMLInputElement>,
   ) => {
     setMealStructure(
-      mealStructure.map((meal) =>
-        meal.id === mealId ? { ...meal, time: event.target.value } : meal,
-      ),
+      Object.fromEntries(
+        Object.entries(mealStructure).map(([tabKey, meals]) => [
+          tabKey,
+          tabKey === activeMealTab
+            ? meals.map((meal) =>
+                meal.id === mealId ? { ...meal, time: event.target.value } : meal,
+              )
+            : meals,
+        ]),
+      ) as MealStructureByTab,
     )
     setMealErrors((current) =>
-      current.map((error, index) =>
-        mealStructure[index]?.id === mealId ? { ...error, time: undefined } : error,
-      ),
+      ({
+        ...current,
+        [activeMealTab]: (current[activeMealTab] ?? []).map((error, index) =>
+          activeMeals[index]?.id === mealId ? { ...error, time: undefined } : error,
+        ),
+      }) as MealErrorsByTab,
     )
   }
 
   const handleAddMeal = () => {
-    if (mealStructure.length >= 10) {
+    if (activeMeals.length >= 10) {
       return
     }
 
-    setMealStructure((currentMeals) => [
-      ...currentMeals,
-      createMealItem(getNextMealId(currentMeals)),
-    ])
-    setMealErrors([])
+    setMealStructure((currentMealsByTab) => ({
+      ...currentMealsByTab,
+      [activeMealTab]: [
+        ...currentMealsByTab[activeMealTab],
+        createMealItemForTab(
+          getNextMealId(currentMealsByTab[activeMealTab], activeMealTab),
+          activeMealTab,
+        ),
+      ],
+    }))
+    setMealErrors((current) => ({ ...current, [activeMealTab]: [] }))
   }
 
   const handleRemoveMeal = (mealId: string) => {
-    if (mealStructure.length <= 1) {
+    if (activeMeals.length <= 1) {
       return
     }
 
-    setMealStructure((currentMeals) =>
-      currentMeals.filter((meal) => meal.id !== mealId),
-    )
-    setMealErrors([])
+    setMealStructure((currentMealsByTab) => ({
+      ...currentMealsByTab,
+      [activeMealTab]: currentMealsByTab[activeMealTab].filter(
+        (meal) => meal.id !== mealId,
+      ),
+    }))
+    setMealErrors((current) => ({ ...current, [activeMealTab]: [] }))
   }
 
   const handleMoveMeal = (index: number, direction: 'up' | 'down') => {
-    setMealStructure((currentMeals) => {
+    setMealStructure((currentMealsByTab) => {
+      const currentMeals = currentMealsByTab[activeMealTab]
       const targetIndex = direction === 'up' ? index - 1 : index + 1
 
       if (targetIndex < 0 || targetIndex >= currentMeals.length) {
-        return currentMeals
+        return currentMealsByTab
       }
 
       const nextMeals = [...currentMeals]
@@ -651,9 +737,12 @@ function GoalSettingPage() {
         nextMeals[index],
       ]
 
-      return nextMeals
+      return {
+        ...currentMealsByTab,
+        [activeMealTab]: nextMeals,
+      }
     })
-    setMealErrors([])
+    setMealErrors((current) => ({ ...current, [activeMealTab]: [] }))
   }
 
   const proceedToNextStep = () => {
@@ -670,7 +759,10 @@ function GoalSettingPage() {
       goalSettingData,
       currentWeight,
     )
-    const nextMealErrors = validateMealStructure(mealStructure)
+    const nextMealErrors: MealErrorsByTab = {
+      weekday: validateMealStructure(mealStructure.weekday),
+      weekend: validateMealStructure(mealStructure.weekend),
+    }
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors)
@@ -685,8 +777,13 @@ function GoalSettingPage() {
       return
     }
 
-    if (hasMealErrors(nextMealErrors)) {
+    if (hasMealErrors(nextMealErrors.weekday) || hasMealErrors(nextMealErrors.weekend)) {
       setMealErrors(nextMealErrors)
+      if (hasMealErrors(nextMealErrors.weekday)) {
+        setActiveMealTab('weekday')
+      } else if (hasMealErrors(nextMealErrors.weekend)) {
+        setActiveMealTab('weekend')
+      }
       return
     }
 
@@ -778,9 +875,25 @@ function GoalSettingPage() {
 
           <MealCard>
             <MealSection>
-              <SectionTitle>하루에 얼마나 드실 수 있으세요?</SectionTitle>
+              <MealCardHeader>
+                <TabList role="tablist" aria-label="식사 구조 탭">
+                  {(Object.keys(MEAL_TAB_LABELS) as MealStructureTabKey[]).map((tab) => (
+                    <TabButton
+                      key={tab}
+                      type="button"
+                      role="tab"
+                      aria-selected={activeMealTab === tab}
+                      $active={activeMealTab === tab}
+                      onClick={() => setActiveMealTab(tab)}
+                    >
+                      {MEAL_TAB_LABELS[tab]}
+                    </TabButton>
+                  ))}
+                </TabList>
+                <SectionTitle>하루에 얼마나 드실 수 있으세요?</SectionTitle>
+              </MealCardHeader>
               <MealList>
-                {mealStructure.map((meal, index) => (
+                {activeMeals.map((meal, index) => (
                   <div key={meal.id}>
                     <MealRow>
                       <OrderButtons>
@@ -795,7 +908,7 @@ function GoalSettingPage() {
                         <OrderButton
                           type="button"
                           aria-label={`${meal.name || `식사 ${index + 1}`} 아래로 이동`}
-                          disabled={index === mealStructure.length - 1}
+                          disabled={index === activeMeals.length - 1}
                           onClick={() => handleMoveMeal(index, 'down')}
                         >
                           ↓
@@ -810,8 +923,8 @@ function GoalSettingPage() {
                           value={meal.name}
                           onChange={(event) => handleMealNameChange(meal.id, event)}
                         />
-                        {mealErrors[index]?.name ? (
-                          <FieldErrorText>{mealErrors[index]?.name}</FieldErrorText>
+                        {activeMealErrors[index]?.name ? (
+                          <FieldErrorText>{activeMealErrors[index]?.name}</FieldErrorText>
                         ) : null}
                       </div>
                       <div>
@@ -821,15 +934,15 @@ function GoalSettingPage() {
                           value={meal.time}
                           onChange={(event) => handleMealTimeChange(meal.id, event)}
                         />
-                        {mealErrors[index]?.time ? (
-                          <FieldErrorText>{mealErrors[index]?.time}</FieldErrorText>
+                        {activeMealErrors[index]?.time ? (
+                          <FieldErrorText>{activeMealErrors[index]?.time}</FieldErrorText>
                         ) : null}
                       </div>
                       <RemoveMealButton
                         type="button"
                         aria-label={`${meal.name || `식사 ${index + 1}`} 삭제`}
                         title={`${meal.name || `식사 ${index + 1}`} 삭제`}
-                        disabled={mealStructure.length <= 1}
+                        disabled={activeMeals.length <= 1}
                         onClick={() => handleRemoveMeal(meal.id)}
                       >
                         <svg
@@ -857,7 +970,7 @@ function GoalSettingPage() {
                 <AddMealButton
                   type="button"
                   $variant="secondary"
-                  disabled={mealStructure.length >= 10}
+                  disabled={activeMeals.length >= 10}
                   onClick={handleAddMeal}
                 >
                   식사 추가하기
