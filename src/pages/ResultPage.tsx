@@ -50,7 +50,7 @@ function ResultPage() {
             $fullWidth
             onClick={() => navigateTo(ROUTES.goal)}
           >
-            다음
+            하루 식단 구성하기
           </Button>
           <RecalculateButton onClick={() => navigateTo(ROUTES.input)} />
         </ActionStack>

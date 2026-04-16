@@ -189,7 +189,7 @@ function InputForm({
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors)
-      setErrorBanner('입력값을 확인한 뒤 다시 진행해 주세요')
+      setErrorBanner('기본정보를 모두 입력해주세요')
       return
     }
 

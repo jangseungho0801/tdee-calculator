@@ -72,7 +72,7 @@ function GoalResultPanel({ goalType, goalResult }: Props) {
   return (
     <Panel>
       <CaloriesCard>
-        <CaloriesLabel>권장 칼로리</CaloriesLabel>
+        <CaloriesLabel>하루 권장 칼로리</CaloriesLabel>
         <CaloriesValue>{goalResult.calories.toLocaleString('ko-KR')} kcal</CaloriesValue>
       </CaloriesCard>
       <MacroSummary macros={goalResult.macros} />
