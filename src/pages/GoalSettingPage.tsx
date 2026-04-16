@@ -1,4 +1,4 @@
-import type { ChangeEvent, DragEvent, FormEvent } from 'react'
+import type { ChangeEvent, FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
 import { navigateTo } from '../app/router/AppRouter.tsx'
@@ -23,14 +23,19 @@ const PageShell = styled.div`
   gap: 20px;
 `
 
-const Card = styled(SectionCard)`
+const ContentForm = styled.form`
+  display: grid;
+  gap: 20px;
+`
+
+const GoalCard = styled(SectionCard)`
   display: grid;
   gap: 24px;
 `
 
-const Divider = styled.div`
-  height: 1px;
-  background: rgba(226, 232, 240, 0.95);
+const MealCard = styled(SectionCard)`
+  display: grid;
+  gap: 24px;
 `
 
 const SummaryCard = styled.section`
@@ -60,12 +65,6 @@ const Question = styled.p`
   line-height: 1.5;
 `
 
-const CurrentWeightNote = styled.p`
-  margin: 0;
-  color: #475569;
-  font-size: 0.95rem;
-`
-
 const FieldGrid = styled.div`
   display: grid;
   gap: 18px;
@@ -76,22 +75,9 @@ const Field = styled.div`
   gap: 8px;
 `
 
-const LabelRow = styled.span`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-`
-
 const Label = styled.span`
   font-weight: 700;
   color: #0f172a;
-`
-
-const InlineInfo = styled.span`
-  color: #64748b;
-  font-size: 0.92rem;
 `
 
 const SummaryText = styled.p`
@@ -130,35 +116,33 @@ const MealList = styled.div`
 
 const MealRow = styled.div`
   display: grid;
-  grid-template-columns: 40px minmax(0, 7fr) minmax(112px, 3fr) 40px;
+  grid-template-columns: 44px minmax(0, 7fr) minmax(112px, 3fr) 40px;
   gap: 10px;
   align-items: start;
 `
 
-const DragHandle = styled.button`
-  min-width: 40px;
-  min-height: 52px;
-  border: 0;
-  border-radius: 14px;
-  background: rgba(248, 250, 252, 0.92);
-  color: #64748b;
-  cursor: grab;
-
-  &:active {
-    cursor: grabbing;
-  }
+const OrderButtons = styled.div`
+  display: grid;
+  gap: 6px;
 `
 
-const DotGrid = styled.span`
-  display: grid;
-  grid-template-columns: repeat(2, 4px);
-  gap: 4px;
+const OrderButton = styled.button`
+  min-width: 44px;
+  min-height: 23px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.92);
+  color: #64748b;
+  cursor: pointer;
 
-  span {
-    width: 4px;
-    height: 4px;
-    border-radius: 999px;
-    background: currentColor;
+  &:hover:not(:disabled) {
+    background: rgba(241, 245, 249, 0.96);
+    color: #334155;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 `
 
@@ -178,7 +162,9 @@ const MealTextInput = styled.input`
   }
 `
 
-const MealTimeInput = styled(MealTextInput)`
+const MealTimeInput = styled(MealTextInput).attrs({
+  type: 'time',
+})`
   text-align: center;
   font-variant-numeric: tabular-nums;
 `
@@ -268,6 +254,10 @@ const WarningList = styled.ul`
   color: #475569;
   display: grid;
   gap: 8px;
+
+  li {
+    white-space: pre-line;
+  }
 `
 
 const ModalActions = styled.div`
@@ -301,11 +291,6 @@ const DURATION_WARNING_COPY: Record<GoalType, string> = {
   bulk: '우선 최대 3개월 동안 식단을 진행하고 다시 목표를 설정하세요',
 }
 
-const RATE_WARNING_COPY: Record<'cut' | 'bulk', string> = {
-  cut: '너무 급격한 감량은 건강에 좋지 않아요, 한번만 다시 생각해보세요',
-  bulk: '너무 급격한 벌크업은 살크업 가능성이 높아요, 한번만 다시 생각해보세요',
-}
-
 type GoalSettingErrors = {
   targetWeight?: string
   durationValue?: string
@@ -331,22 +316,6 @@ function sanitizeWeightInput(value: string) {
 
 function sanitizeDurationInput(value: string) {
   return value.replace(/[^0-9]/g, '')
-}
-
-function sanitizeMealTimeInput(value: string) {
-  const sanitized = value.replace(/[^0-9:]/g, '').slice(0, 5)
-
-  if (sanitized.length <= 2) {
-    return sanitized
-  }
-
-  const [hours, minutes = ''] = sanitized.replace(':', '').match(/.{1,2}/g) ?? []
-
-  if (!hours) {
-    return ''
-  }
-
-  return [hours, minutes].filter(Boolean).join(':').slice(0, 5)
 }
 
 function validateMealStructure(mealStructure: MealStructureItem[]) {
@@ -375,8 +344,44 @@ function createMealItem(id: number): MealStructureItem {
   return {
     id: `meal-${id}`,
     name: `식사 ${id}`,
-    time: '',
+    time: '08:00',
   }
+}
+
+function formatDurationLabel(value: string, unit: GoalDurationUnit) {
+  if (!value.trim()) {
+    return ''
+  }
+
+  const suffixMap: Record<GoalDurationUnit, string> = {
+    day: '일',
+    week: '주',
+    month: '개월',
+  }
+
+  return `${value}${suffixMap[unit]}`
+}
+
+function buildRateWarningMessage(
+  goalType: 'cut' | 'bulk',
+  goalSettingData: GoalSettingData,
+  currentWeight: number,
+) {
+  const durationLabel = formatDurationLabel(
+    goalSettingData.durationValue,
+    goalSettingData.durationUnit,
+  )
+  const targetWeight = Number(goalSettingData.targetWeight)
+  const weightDelta = Math.abs(targetWeight - currentWeight)
+  const formattedDelta = Number.isInteger(weightDelta)
+    ? weightDelta.toString()
+    : weightDelta.toFixed(1)
+
+  if (goalType === 'cut') {
+    return `${durationLabel} 내 ${formattedDelta}kg을 늘리시려구요?\n너무 급격한 감량은 건강에 좋지 않아요, 한번만 다시 생각해보세요`
+  }
+
+  return `${durationLabel} 내 ${formattedDelta}kg을 늘리시려구요?\n너무 급격한 벌크업은 살크업 가능성이 높아요, 한번만 다시 생각해보세요`
 }
 
 function convertDurationToDays(value: number, unit: GoalDurationUnit) {
@@ -470,7 +475,7 @@ function collectWarnings(
     (Math.abs(targetWeight - currentWeight) * 1000) / (durationDays / 7)
 
   if (weeklyChangeGrams > 500) {
-    warnings.push(RATE_WARNING_COPY[goalType])
+    warnings.push(buildRateWarningMessage(goalType, goalSettingData, currentWeight))
   }
 
   return warnings
@@ -510,7 +515,6 @@ function GoalSettingPage() {
   const [mealErrors, setMealErrors] = useState<MealItemErrors[]>([])
   const [warningMessages, setWarningMessages] = useState<string[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [draggingMealId, setDraggingMealId] = useState<string | null>(null)
 
   const currentWeight = Number(inputData.weight)
   const formattedCurrentWeight = formatWeight(currentWeight)
@@ -584,11 +588,9 @@ function GoalSettingPage() {
     mealId: string,
     event: ChangeEvent<HTMLInputElement>,
   ) => {
-    const nextValue = sanitizeMealTimeInput(event.target.value)
-
     setMealStructure(
       mealStructure.map((meal) =>
-        meal.id === mealId ? { ...meal, time: nextValue } : meal,
+        meal.id === mealId ? { ...meal, time: event.target.value } : meal,
       ),
     )
     setMealErrors((current) =>
@@ -616,34 +618,20 @@ function GoalSettingPage() {
     setMealErrors([])
   }
 
-  const handleDragStart = (mealId: string) => {
-    setDraggingMealId(mealId)
-  }
+  const handleMoveMeal = (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
 
-  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-  }
-
-  const handleDropMeal = (targetMealId: string) => {
-    if (!draggingMealId || draggingMealId === targetMealId) {
-      setDraggingMealId(null)
-      return
-    }
-
-    const sourceIndex = mealStructure.findIndex((meal) => meal.id === draggingMealId)
-    const targetIndex = mealStructure.findIndex((meal) => meal.id === targetMealId)
-
-    if (sourceIndex === -1 || targetIndex === -1) {
-      setDraggingMealId(null)
+    if (targetIndex < 0 || targetIndex >= mealStructure.length) {
       return
     }
 
     const nextMeals = [...mealStructure]
-    const [movedMeal] = nextMeals.splice(sourceIndex, 1)
-    nextMeals.splice(targetIndex, 0, movedMeal)
+    ;[nextMeals[index], nextMeals[targetIndex]] = [
+      nextMeals[targetIndex],
+      nextMeals[index],
+    ]
     setMealStructure(nextMeals)
     setMealErrors([])
-    setDraggingMealId(null)
   }
 
   const proceedToNextStep = () => {
@@ -714,162 +702,154 @@ function GoalSettingPage() {
           </SummaryText>
         </SummaryCard>
 
-        <Card as="form" ref={formRef} onSubmit={handleSubmit}>
-          <Header>
-            <Question>{QUESTION_COPY[selectedGoal]}</Question>
-            {selectedGoal === 'maintain' ? (
-              <CurrentWeightNote>현재 체중: {formattedCurrentWeight}kg</CurrentWeightNote>
-            ) : null}
-          </Header>
+        <ContentForm ref={formRef} onSubmit={handleSubmit}>
+          <GoalCard>
+            <Header>
+              <Question>{QUESTION_COPY[selectedGoal]}</Question>
+            </Header>
 
-          <FieldGrid>
-            {selectedGoal !== 'maintain' ? (
-              <Field>
-                <LabelRow>
+            <FieldGrid>
+              {selectedGoal !== 'maintain' ? (
+                <Field>
                   <Label>목표 체중</Label>
-                  <InlineInfo>현재 체중: {formattedCurrentWeight}kg</InlineInfo>
-                </LabelRow>
-                <NumberInputField
-                  id="targetWeight"
-                  name="targetWeight"
-                  label={undefined}
-                  placeholder="예: 64"
-                  suffix="kg"
-                  value={goalSettingData.targetWeight}
-                  error={errors.targetWeight}
-                  onChange={handleFieldChange}
-                />
-              </Field>
-            ) : null}
+                  <NumberInputField
+                    id="targetWeight"
+                    name="targetWeight"
+                    label={undefined}
+                    placeholder="예: 64"
+                    suffix="kg"
+                    value={goalSettingData.targetWeight}
+                    error={errors.targetWeight}
+                    onChange={handleFieldChange}
+                  />
+                </Field>
+              ) : null}
 
-            <Field>
-              <Label>목표 기간</Label>
-              <DurationRow>
-                <NumberInputField
-                  id="durationValue"
-                  name="durationValue"
-                  label={undefined}
-                  placeholder="예: 8"
-                  suffix=""
-                  value={goalSettingData.durationValue}
-                  error={errors.durationValue}
-                  onChange={handleFieldChange}
-                />
-                <UnitSelect
-                  id="durationUnit"
-                  name="durationUnit"
-                  aria-label="목표 기간 단위"
-                  value={goalSettingData.durationUnit}
-                  onChange={handleFieldChange}
-                >
-                  <option value="day">일</option>
-                  <option value="week">주</option>
-                  <option value="month">개월</option>
-                </UnitSelect>
-              </DurationRow>
-            </Field>
-          </FieldGrid>
-
-          <Divider />
-
-          <MealSection>
-            <SectionTitle>하루에 얼마나 드실 수 있으세요?</SectionTitle>
-            <MealList>
-              {mealStructure.map((meal, index) => (
-                <div key={meal.id}>
-                  <MealRow
-                    onDragOver={handleDragOver}
-                    onDrop={() => handleDropMeal(meal.id)}
+              <Field>
+                <Label>목표 기간</Label>
+                <DurationRow>
+                  <NumberInputField
+                    id="durationValue"
+                    name="durationValue"
+                    label={undefined}
+                    placeholder="예: 8"
+                    suffix=""
+                    value={goalSettingData.durationValue}
+                    error={errors.durationValue}
+                    onChange={handleFieldChange}
+                  />
+                  <UnitSelect
+                    id="durationUnit"
+                    name="durationUnit"
+                    aria-label="목표 기간 단위"
+                    value={goalSettingData.durationUnit}
+                    onChange={handleFieldChange}
                   >
-                    <DragHandle
-                      type="button"
-                      draggable
-                      aria-label={`${meal.name || `식사 ${index + 1}`} 순서 변경`}
-                      onDragStart={() => handleDragStart(meal.id)}
-                      onDragEnd={() => setDraggingMealId(null)}
-                    >
-                      <DotGrid aria-hidden="true">
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                      </DotGrid>
-                    </DragHandle>
-                    <div>
-                      <MealTextInput
-                        id={`meal-name-${meal.id}`}
-                        name={`meal-name-${meal.id}`}
-                        type="text"
-                        placeholder="식사 이름"
-                        value={meal.name}
-                        onChange={(event) => handleMealNameChange(meal.id, event)}
-                      />
-                      {mealErrors[index]?.name ? (
-                        <FieldErrorText>{mealErrors[index]?.name}</FieldErrorText>
-                      ) : null}
-                    </div>
-                    <div>
-                      <MealTimeInput
-                        id={`meal-time-${meal.id}`}
-                        name={`meal-time-${meal.id}`}
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="08:00"
-                        value={meal.time}
-                        onChange={(event) => handleMealTimeChange(meal.id, event)}
-                      />
-                      {mealErrors[index]?.time ? (
-                        <FieldErrorText>{mealErrors[index]?.time}</FieldErrorText>
-                      ) : null}
-                    </div>
-                    <RemoveMealButton
-                      type="button"
-                      aria-label={`${meal.name || `식사 ${index + 1}`} 삭제`}
-                      title={`${meal.name || `식사 ${index + 1}`} 삭제`}
-                      disabled={mealStructure.length <= 1}
-                      onClick={() => handleRemoveMeal(meal.id)}
-                    >
-                      <svg
-                        aria-hidden="true"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M4 7H20M9 7V5.8C9 5.05 9.05 4.68 9.2 4.4C9.33 4.17 9.52 3.98 9.75 3.85C10.03 3.7 10.4 3.65 11.15 3.65H12.85C13.6 3.65 13.97 3.7 14.25 3.85C14.48 3.98 14.67 4.17 14.8 4.4C14.95 4.68 15 5.05 15 5.8V7M18.2 7V17.2C18.2 18.32 18.2 18.88 17.98 19.31C17.79 19.68 17.48 19.99 17.11 20.18C16.68 20.4 16.12 20.4 15 20.4H9C7.88 20.4 7.32 20.4 6.89 20.18C6.52 19.99 6.21 19.68 6.02 19.31C5.8 18.88 5.8 18.32 5.8 17.2V7M10 10.5V16.5M14 10.5V16.5"
-                          stroke="currentColor"
-                          strokeWidth="1.7"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </RemoveMealButton>
-                  </MealRow>
-                </div>
-              ))}
-            </MealList>
-            <InlineButtonRow>
-              <AddMealButton
-                type="button"
-                $variant="secondary"
-                disabled={mealStructure.length >= 10}
-                onClick={handleAddMeal}
-              >
-                식사 추가하기
-              </AddMealButton>
-            </InlineButtonRow>
-          </MealSection>
+                    <option value="day">일</option>
+                    <option value="week">주</option>
+                    <option value="month">개월</option>
+                  </UnitSelect>
+                </DurationRow>
+              </Field>
+            </FieldGrid>
+          </GoalCard>
 
-          <FooterActions>
-            <Button type="submit" $fullWidth>
-              다음
-            </Button>
-          </FooterActions>
-        </Card>
+          <MealCard>
+            <MealSection>
+              <SectionTitle>하루에 얼마나 드실 수 있으세요?</SectionTitle>
+              <MealList>
+                {mealStructure.map((meal, index) => (
+                  <div key={meal.id}>
+                    <MealRow>
+                      <OrderButtons>
+                        <OrderButton
+                          type="button"
+                          aria-label={`${meal.name || `식사 ${index + 1}`} 위로 이동`}
+                          disabled={index === 0}
+                          onClick={() => handleMoveMeal(index, 'up')}
+                        >
+                          ↑
+                        </OrderButton>
+                        <OrderButton
+                          type="button"
+                          aria-label={`${meal.name || `식사 ${index + 1}`} 아래로 이동`}
+                          disabled={index === mealStructure.length - 1}
+                          onClick={() => handleMoveMeal(index, 'down')}
+                        >
+                          ↓
+                        </OrderButton>
+                      </OrderButtons>
+                      <div>
+                        <MealTextInput
+                          id={`meal-name-${meal.id}`}
+                          name={`meal-name-${meal.id}`}
+                          type="text"
+                          placeholder="식사 이름"
+                          value={meal.name}
+                          onChange={(event) => handleMealNameChange(meal.id, event)}
+                        />
+                        {mealErrors[index]?.name ? (
+                          <FieldErrorText>{mealErrors[index]?.name}</FieldErrorText>
+                        ) : null}
+                      </div>
+                      <div>
+                        <MealTimeInput
+                          id={`meal-time-${meal.id}`}
+                          name={`meal-time-${meal.id}`}
+                          value={meal.time}
+                          onChange={(event) => handleMealTimeChange(meal.id, event)}
+                        />
+                        {mealErrors[index]?.time ? (
+                          <FieldErrorText>{mealErrors[index]?.time}</FieldErrorText>
+                        ) : null}
+                      </div>
+                      <RemoveMealButton
+                        type="button"
+                        aria-label={`${meal.name || `식사 ${index + 1}`} 삭제`}
+                        title={`${meal.name || `식사 ${index + 1}`} 삭제`}
+                        disabled={mealStructure.length <= 1}
+                        onClick={() => handleRemoveMeal(meal.id)}
+                      >
+                        <svg
+                          aria-hidden="true"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M4 7H20M9 7V5.8C9 5.05 9.05 4.68 9.2 4.4C9.33 4.17 9.52 3.98 9.75 3.85C10.03 3.7 10.4 3.65 11.15 3.65H12.85C13.6 3.65 13.97 3.7 14.25 3.85C14.48 3.98 14.67 4.17 14.8 4.4C14.95 4.68 15 5.05 15 5.8V7M18.2 7V17.2C18.2 18.32 18.2 18.88 17.98 19.31C17.79 19.68 17.48 19.99 17.11 20.18C16.68 20.4 16.12 20.4 15 20.4H9C7.88 20.4 7.32 20.4 6.89 20.18C6.52 19.99 6.21 19.68 6.02 19.31C5.8 18.88 5.8 18.32 5.8 17.2V7M10 10.5V16.5M14 10.5V16.5"
+                            stroke="currentColor"
+                            strokeWidth="1.7"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </RemoveMealButton>
+                    </MealRow>
+                  </div>
+                ))}
+              </MealList>
+              <InlineButtonRow>
+                <AddMealButton
+                  type="button"
+                  $variant="secondary"
+                  disabled={mealStructure.length >= 10}
+                  onClick={handleAddMeal}
+                >
+                  식사 추가하기
+                </AddMealButton>
+              </InlineButtonRow>
+
+              <FooterActions>
+                <Button type="submit" $fullWidth>
+                  다음
+                </Button>
+              </FooterActions>
+            </MealSection>
+          </MealCard>
+        </ContentForm>
       </PageShell>
 
       {isModalOpen ? (
