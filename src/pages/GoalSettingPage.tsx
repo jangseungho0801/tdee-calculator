@@ -378,7 +378,7 @@ function buildRateWarningMessage(
     : weightDelta.toFixed(1)
 
   if (goalType === 'cut') {
-    return `${durationLabel} 내 ${formattedDelta}kg을 늘리시려구요?\n너무 급격한 감량은 건강에 좋지 않아요, 한번만 다시 생각해보세요`
+    return `${durationLabel} 내 ${formattedDelta}kg을 빼시려구요?\n너무 급격한 감량은 건강에 좋지 않아요, 한번만 다시 생각해보세요`
   }
 
   return `${durationLabel} 내 ${formattedDelta}kg을 늘리시려구요?\n너무 급격한 벌크업은 살크업 가능성이 높아요, 한번만 다시 생각해보세요`
