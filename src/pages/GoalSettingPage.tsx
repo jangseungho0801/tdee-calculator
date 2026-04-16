@@ -1,4 +1,4 @@
-import type { ChangeEvent, FormEvent } from 'react'
+import type { ChangeEvent, DragEvent, FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
 import { navigateTo } from '../app/router/AppRouter.tsx'
@@ -13,6 +13,7 @@ import type {
   GoalDurationUnit,
   GoalSettingData,
   GoalType,
+  MealStructureItem,
 } from '../types/calculator'
 
 const PageShell = styled.div`
@@ -25,6 +26,11 @@ const PageShell = styled.div`
 const Card = styled(SectionCard)`
   display: grid;
   gap: 24px;
+`
+
+const Divider = styled.div`
+  height: 1px;
+  background: rgba(226, 232, 240, 0.95);
 `
 
 const SummaryCard = styled.section`
@@ -101,6 +107,112 @@ const DurationRow = styled.div`
   grid-template-columns: minmax(0, 1fr) 120px;
   gap: 12px;
   align-items: start;
+`
+
+const MealSection = styled.section`
+  display: grid;
+  gap: 16px;
+  padding-top: 8px;
+`
+
+const SectionTitle = styled.h2`
+  margin: 0;
+  color: #111827;
+  font-size: 1.08rem;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+`
+
+const MealList = styled.div`
+  display: grid;
+  gap: 12px;
+`
+
+const MealRow = styled.div`
+  display: grid;
+  grid-template-columns: 40px minmax(0, 7fr) minmax(112px, 3fr) 40px;
+  gap: 10px;
+  align-items: start;
+`
+
+const DragHandle = styled.button`
+  min-width: 40px;
+  min-height: 52px;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.92);
+  color: #64748b;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+`
+
+const DotGrid = styled.span`
+  display: grid;
+  grid-template-columns: repeat(2, 4px);
+  gap: 4px;
+
+  span {
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
+    background: currentColor;
+  }
+`
+
+const MealTextInput = styled.input`
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.36);
+  background: rgba(248, 250, 252, 0.88);
+  color: #0f172a;
+  outline: none;
+
+  &:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+  }
+`
+
+const MealTimeInput = styled(MealTextInput)`
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+`
+
+const RemoveMealButton = styled.button`
+  min-width: 40px;
+  min-height: 52px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(241, 245, 249, 0.92);
+    color: #475569;
+  }
+`
+
+const FieldErrorText = styled.span`
+  display: block;
+  margin-top: 6px;
+  color: #b42318;
+  font-size: 0.88rem;
+`
+
+const InlineButtonRow = styled.div`
+  display: flex;
+  justify-content: flex-start;
+`
+
+const AddMealButton = styled(Button)`
+  min-height: 44px;
+  padding: 0 18px;
 `
 
 const UnitSelect = styled.select`
@@ -199,6 +311,13 @@ type GoalSettingErrors = {
   durationValue?: string
 }
 
+type MealItemErrors = {
+  name?: string
+  time?: string
+}
+
+const TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$/
+
 function sanitizeWeightInput(value: string) {
   const sanitized = value.replace(/[^0-9.]/g, '')
   const [integerPart = '', ...decimalParts] = sanitized.split('.')
@@ -212,6 +331,52 @@ function sanitizeWeightInput(value: string) {
 
 function sanitizeDurationInput(value: string) {
   return value.replace(/[^0-9]/g, '')
+}
+
+function sanitizeMealTimeInput(value: string) {
+  const sanitized = value.replace(/[^0-9:]/g, '').slice(0, 5)
+
+  if (sanitized.length <= 2) {
+    return sanitized
+  }
+
+  const [hours, minutes = ''] = sanitized.replace(':', '').match(/.{1,2}/g) ?? []
+
+  if (!hours) {
+    return ''
+  }
+
+  return [hours, minutes].filter(Boolean).join(':').slice(0, 5)
+}
+
+function validateMealStructure(mealStructure: MealStructureItem[]) {
+  return mealStructure.map((meal) => {
+    const errors: MealItemErrors = {}
+
+    if (!meal.name.trim()) {
+      errors.name = '식사 이름을 입력해주세요.'
+    }
+
+    if (!meal.time.trim()) {
+      errors.time = '식사 시간을 입력해주세요.'
+    } else if (!TIME_PATTERN.test(meal.time)) {
+      errors.time = '식사 시간은 HH:MM 형식으로 입력해주세요.'
+    }
+
+    return errors
+  })
+}
+
+function hasMealErrors(mealErrors: MealItemErrors[]) {
+  return mealErrors.some((error) => error.name || error.time)
+}
+
+function createMealItem(id: number): MealStructureItem {
+  return {
+    id: `meal-${id}`,
+    name: `식사 ${id}`,
+    time: '',
+  }
 }
 
 function convertDurationToDays(value: number, unit: GoalDurationUnit) {
@@ -336,12 +501,16 @@ function GoalSettingPage() {
     resultData,
     selectedGoal,
     goalSettingData,
+    mealStructure,
     setGoalSettingData,
+    setMealStructure,
   } = useTdeeCalculator()
   const formRef = useRef<HTMLFormElement | null>(null)
   const [errors, setErrors] = useState<GoalSettingErrors>({})
+  const [mealErrors, setMealErrors] = useState<MealItemErrors[]>([])
   const [warningMessages, setWarningMessages] = useState<string[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [draggingMealId, setDraggingMealId] = useState<string | null>(null)
 
   const currentWeight = Number(inputData.weight)
   const formattedCurrentWeight = formatWeight(currentWeight)
@@ -395,6 +564,88 @@ function GoalSettingPage() {
     }))
   }
 
+  const handleMealNameChange = (
+    mealId: string,
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    setMealStructure(
+      mealStructure.map((meal) =>
+        meal.id === mealId ? { ...meal, name: event.target.value } : meal,
+      ),
+    )
+    setMealErrors((current) =>
+      current.map((error, index) =>
+        mealStructure[index]?.id === mealId ? { ...error, name: undefined } : error,
+      ),
+    )
+  }
+
+  const handleMealTimeChange = (
+    mealId: string,
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    const nextValue = sanitizeMealTimeInput(event.target.value)
+
+    setMealStructure(
+      mealStructure.map((meal) =>
+        meal.id === mealId ? { ...meal, time: nextValue } : meal,
+      ),
+    )
+    setMealErrors((current) =>
+      current.map((error, index) =>
+        mealStructure[index]?.id === mealId ? { ...error, time: undefined } : error,
+      ),
+    )
+  }
+
+  const handleAddMeal = () => {
+    if (mealStructure.length >= 10) {
+      return
+    }
+
+    setMealStructure([...mealStructure, createMealItem(mealStructure.length + 1)])
+    setMealErrors([])
+  }
+
+  const handleRemoveMeal = (mealId: string) => {
+    if (mealStructure.length <= 1) {
+      return
+    }
+
+    setMealStructure(mealStructure.filter((meal) => meal.id !== mealId))
+    setMealErrors([])
+  }
+
+  const handleDragStart = (mealId: string) => {
+    setDraggingMealId(mealId)
+  }
+
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+  }
+
+  const handleDropMeal = (targetMealId: string) => {
+    if (!draggingMealId || draggingMealId === targetMealId) {
+      setDraggingMealId(null)
+      return
+    }
+
+    const sourceIndex = mealStructure.findIndex((meal) => meal.id === draggingMealId)
+    const targetIndex = mealStructure.findIndex((meal) => meal.id === targetMealId)
+
+    if (sourceIndex === -1 || targetIndex === -1) {
+      setDraggingMealId(null)
+      return
+    }
+
+    const nextMeals = [...mealStructure]
+    const [movedMeal] = nextMeals.splice(sourceIndex, 1)
+    nextMeals.splice(targetIndex, 0, movedMeal)
+    setMealStructure(nextMeals)
+    setMealErrors([])
+    setDraggingMealId(null)
+  }
+
   const proceedToNextStep = () => {
     setIsModalOpen(false)
     setWarningMessages([])
@@ -409,6 +660,7 @@ function GoalSettingPage() {
       goalSettingData,
       currentWeight,
     )
+    const nextMealErrors = validateMealStructure(mealStructure)
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors)
@@ -423,7 +675,13 @@ function GoalSettingPage() {
       return
     }
 
+    if (hasMealErrors(nextMealErrors)) {
+      setMealErrors(nextMealErrors)
+      return
+    }
+
     setErrors({})
+    setMealErrors([])
 
     const nextWarnings = collectWarnings(
       selectedGoal,
@@ -511,6 +769,100 @@ function GoalSettingPage() {
               </DurationRow>
             </Field>
           </FieldGrid>
+
+          <Divider />
+
+          <MealSection>
+            <SectionTitle>하루에 얼마나 드실 수 있으세요?</SectionTitle>
+            <MealList>
+              {mealStructure.map((meal, index) => (
+                <div key={meal.id}>
+                  <MealRow
+                    onDragOver={handleDragOver}
+                    onDrop={() => handleDropMeal(meal.id)}
+                  >
+                    <DragHandle
+                      type="button"
+                      draggable
+                      aria-label={`${meal.name || `식사 ${index + 1}`} 순서 변경`}
+                      onDragStart={() => handleDragStart(meal.id)}
+                      onDragEnd={() => setDraggingMealId(null)}
+                    >
+                      <DotGrid aria-hidden="true">
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                      </DotGrid>
+                    </DragHandle>
+                    <div>
+                      <MealTextInput
+                        id={`meal-name-${meal.id}`}
+                        name={`meal-name-${meal.id}`}
+                        type="text"
+                        placeholder="식사 이름"
+                        value={meal.name}
+                        onChange={(event) => handleMealNameChange(meal.id, event)}
+                      />
+                      {mealErrors[index]?.name ? (
+                        <FieldErrorText>{mealErrors[index]?.name}</FieldErrorText>
+                      ) : null}
+                    </div>
+                    <div>
+                      <MealTimeInput
+                        id={`meal-time-${meal.id}`}
+                        name={`meal-time-${meal.id}`}
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="08:00"
+                        value={meal.time}
+                        onChange={(event) => handleMealTimeChange(meal.id, event)}
+                      />
+                      {mealErrors[index]?.time ? (
+                        <FieldErrorText>{mealErrors[index]?.time}</FieldErrorText>
+                      ) : null}
+                    </div>
+                    <RemoveMealButton
+                      type="button"
+                      aria-label={`${meal.name || `식사 ${index + 1}`} 삭제`}
+                      title={`${meal.name || `식사 ${index + 1}`} 삭제`}
+                      disabled={mealStructure.length <= 1}
+                      onClick={() => handleRemoveMeal(meal.id)}
+                    >
+                      <svg
+                        aria-hidden="true"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M4 7H20M9 7V5.8C9 5.05 9.05 4.68 9.2 4.4C9.33 4.17 9.52 3.98 9.75 3.85C10.03 3.7 10.4 3.65 11.15 3.65H12.85C13.6 3.65 13.97 3.7 14.25 3.85C14.48 3.98 14.67 4.17 14.8 4.4C14.95 4.68 15 5.05 15 5.8V7M18.2 7V17.2C18.2 18.32 18.2 18.88 17.98 19.31C17.79 19.68 17.48 19.99 17.11 20.18C16.68 20.4 16.12 20.4 15 20.4H9C7.88 20.4 7.32 20.4 6.89 20.18C6.52 19.99 6.21 19.68 6.02 19.31C5.8 18.88 5.8 18.32 5.8 17.2V7M10 10.5V16.5M14 10.5V16.5"
+                          stroke="currentColor"
+                          strokeWidth="1.7"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </RemoveMealButton>
+                  </MealRow>
+                </div>
+              ))}
+            </MealList>
+            <InlineButtonRow>
+              <AddMealButton
+                type="button"
+                $variant="secondary"
+                disabled={mealStructure.length >= 10}
+                onClick={handleAddMeal}
+              >
+                식사 추가하기
+              </AddMealButton>
+            </InlineButtonRow>
+          </MealSection>
 
           <FooterActions>
             <Button type="submit" $fullWidth>

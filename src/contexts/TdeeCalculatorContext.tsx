@@ -5,6 +5,7 @@ import type {
   GoalType,
   GoalSettingData,
   InputData,
+  MealStructureItem,
   TdeeCalculatorContextValue,
 } from '../types/calculator'
 
@@ -23,6 +24,12 @@ const initialGoalSettingData: GoalSettingData = {
   durationUnit: 'week',
 }
 
+const initialMealStructure: MealStructureItem[] = [
+  { id: 'meal-1', name: '아침', time: '08:00' },
+  { id: 'meal-2', name: '점심', time: '13:00' },
+  { id: 'meal-3', name: '저녁', time: '19:00' },
+]
+
 export const TdeeCalculatorContext =
   createContext<TdeeCalculatorContextValue | null>(null)
 
@@ -37,6 +44,8 @@ export function TdeeCalculatorProvider({ children }: Props) {
   const [goalSettingData, setGoalSettingData] = useState<GoalSettingData>(
     initialGoalSettingData,
   )
+  const [mealStructure, setMealStructure] =
+    useState<MealStructureItem[]>(initialMealStructure)
 
   const value = useMemo<TdeeCalculatorContextValue>(
     () => ({
@@ -44,18 +53,21 @@ export function TdeeCalculatorProvider({ children }: Props) {
       resultData,
       selectedGoal,
       goalSettingData,
+      mealStructure,
       setInputData,
       setResultData,
       setSelectedGoal,
       setGoalSettingData,
+      setMealStructure,
       resetCalculator: () => {
         setInputData(initialInputData)
         setResultData(null)
         setSelectedGoal('cut')
         setGoalSettingData(initialGoalSettingData)
+        setMealStructure(initialMealStructure)
       },
     }),
-    [goalSettingData, inputData, resultData, selectedGoal],
+    [goalSettingData, inputData, mealStructure, resultData, selectedGoal],
   )
 
   return (

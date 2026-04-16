@@ -49,6 +49,12 @@ export type GoalSettingData = {
   durationUnit: GoalDurationUnit
 }
 
+export type MealStructureItem = {
+  id: string
+  name: string
+  time: string
+}
+
 export type CalculationResult = {
   bmr: number
   tdee: number
@@ -62,9 +68,11 @@ export type TdeeCalculatorContextValue = {
   resultData: CalculationResult | null
   selectedGoal: GoalType
   goalSettingData: GoalSettingData
+  mealStructure: MealStructureItem[]
   setInputData: (value: InputData) => void
   setResultData: (value: CalculationResult | null) => void
   setSelectedGoal: (value: GoalType) => void
   setGoalSettingData: (value: GoalSettingData) => void
+  setMealStructure: (value: MealStructureItem[]) => void
   resetCalculator: () => void
 }
