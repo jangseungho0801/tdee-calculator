@@ -65,10 +65,6 @@ const TabButton = styled.button<{ $active: boolean }>`
 const CardGrid = styled.div`
   display: grid;
   gap: 14px;
-
-  @media (min-width: 640px) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 `
 
 const MealCard = styled.article`
