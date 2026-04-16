@@ -1,4 +1,3 @@
-import type { ChangeEvent, FormEvent } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import styled from 'styled-components'
 import { navigateTo } from '../app/router/AppRouter.tsx'
@@ -8,11 +7,7 @@ import SectionCard from '../components/common/SectionCard.tsx'
 import StepTitle from '../components/common/StepTitle.tsx'
 import { ROUTES } from '../constants/routes'
 import { useTdeeCalculator } from '../hooks/useTdeeCalculator'
-import type {
-  MacroResult,
-  MealStructureByTab,
-  MealStructureTabKey,
-} from '../types/calculator'
+import type { MealStructureTabKey } from '../types/calculator'
 
 const PageShell = styled.div`
   width: min(100%, 760px);
@@ -32,9 +27,9 @@ const Description = styled.p`
   line-height: 1.6;
 `
 
-const Card = styled(SectionCard)`
+const ContentCard = styled(SectionCard)`
   display: grid;
-  gap: 20px;
+  gap: 24px;
 `
 
 const TabList = styled.div`
@@ -67,191 +62,100 @@ const TabButton = styled.button<{ $active: boolean }>`
     $active ? '0 10px 24px rgba(29, 78, 216, 0.18)' : 'none'};
 `
 
-const MealList = styled.div`
+const CardGrid = styled.div`
   display: grid;
-  gap: 12px;
-`
-
-const MealRow = styled.div`
-  display: grid;
-  gap: 10px;
-  padding: 18px 20px;
-  border-radius: 22px;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  background: rgba(248, 250, 252, 0.78);
-`
-
-const MealTop = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-`
-
-const MealName = styled.span`
-  color: #111827;
-  font-size: 1rem;
-  font-weight: 800;
-`
-
-const MealTime = styled.span`
-  color: #64748b;
-  font-size: 0.94rem;
-  font-variant-numeric: tabular-nums;
-`
-
-const MealBottom = styled.div`
-  display: grid;
-  gap: 10px;
+  gap: 14px;
 
   @media (min-width: 640px) {
-    grid-template-columns: auto auto 1fr;
-    align-items: center;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 `
 
-const RatioField = styled.label`
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: #475569;
-  font-size: 0.94rem;
+const MealCard = styled.article`
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 26px;
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96)),
+    #ffffff;
+  box-shadow:
+    0 18px 40px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+`
+
+const MealName = styled.h2`
+  margin: 0;
+  color: #111827;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.4;
+`
+
+const KcalValue = styled.p`
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+`
+
+const MacroGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+`
+
+const MacroCell = styled.div`
+  display: grid;
+  gap: 6px;
+  padding: 14px 12px;
+  border-radius: 18px;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  text-align: center;
+`
+
+const MacroLabel = styled.span`
+  color: #64748b;
+  font-size: 0.84rem;
   font-weight: 700;
 `
 
-const RatioInput = styled.input`
-  width: 78px;
-  min-height: 40px;
-  padding: 0 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.36);
-  background: #ffffff;
-  color: #0f172a;
-  outline: none;
-  text-align: right;
-
-  &:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
-  }
-`
-
-const KcalText = styled.div`
+const MacroValue = styled.span`
   color: #111827;
   font-size: 1rem;
   font-weight: 800;
-`
-
-const MacroText = styled.div`
-  color: #475569;
-  font-size: 0.94rem;
-  line-height: 1.6;
 `
 
 const FooterActions = styled.div`
   display: grid;
+  gap: 10px;
 `
-
-const Overlay = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: rgba(15, 23, 42, 0.36);
-  backdrop-filter: blur(6px);
-`
-
-const ModalCard = styled.section`
-  width: min(100%, 440px);
-  display: grid;
-  gap: 18px;
-  padding: 24px;
-  border-radius: 24px;
-  background: #ffffff;
-  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.2);
-`
-
-const ModalTitle = styled.h2`
-  margin: 0;
-  color: #111827;
-  font-size: 1.35rem;
-`
-
-const ModalBody = styled.p`
-  margin: 0;
-  color: #475569;
-  line-height: 1.6;
-`
-
-type RatioState = Record<MealStructureTabKey, string[]>
 
 const TAB_LABELS: Record<MealStructureTabKey, string> = {
   weekday: '평일',
   weekend: '주말',
 }
 
-function buildEvenRatios(count: number) {
+function calculateEvenMealSplit(total: number, count: number) {
   if (count <= 0) {
     return []
   }
 
-  const base = Math.floor((1000 / count)) / 10
-  const ratios = Array.from({ length: count }, () => base)
-  const sumWithoutLast = ratios.slice(0, -1).reduce((sum, value) => sum + value, 0)
-  ratios[count - 1] = Number((100 - sumWithoutLast).toFixed(1))
+  const baseValue = total / count
+  const values = Array.from({ length: count }, () => Number(baseValue.toFixed(1)))
+  const sumWithoutLast = values.slice(0, -1).reduce((sum, value) => sum + value, 0)
+  values[count - 1] = Number((total - sumWithoutLast).toFixed(1))
 
-  return ratios.map((value) => value.toFixed(1))
-}
-
-function sanitizeRatioInput(value: string) {
-  const sanitized = value.replace(/[^0-9.]/g, '')
-  const [integerPart = '', ...decimalParts] = sanitized.split('.')
-
-  if (decimalParts.length === 0) {
-    return integerPart
-  }
-
-  return `${integerPart}.${decimalParts.join('').slice(0, 1)}`
-}
-
-function createInitialRatios(mealStructure: MealStructureByTab): RatioState {
-  return {
-    weekday: buildEvenRatios(mealStructure.weekday.length),
-    weekend: buildEvenRatios(mealStructure.weekend.length),
-  }
-}
-
-function syncRatiosWithMeals(
-  currentRatios: string[],
-  mealCount: number,
-) {
-  if (currentRatios.length === mealCount) {
-    return currentRatios
-  }
-
-  return buildEvenRatios(mealCount)
-}
-
-function calculateMealMacros(totalMacros: MacroResult, ratio: number) {
-  const multiplier = ratio / 100
-
-  return {
-    carbsGrams: Number((totalMacros.carbsGrams * multiplier).toFixed(1)),
-    proteinGrams: Number((totalMacros.proteinGrams * multiplier).toFixed(1)),
-    fatGrams: Number((totalMacros.fatGrams * multiplier).toFixed(1)),
-  }
+  return values
 }
 
 function MealMacroPage() {
   const { resultData, selectedGoal, mealStructure } = useTdeeCalculator()
   const [activeTab, setActiveTab] = useState<MealStructureTabKey>('weekday')
-  const [ratiosByTab, setRatiosByTab] = useState<RatioState>(() =>
-    createInitialRatios(mealStructure),
-  )
-  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     if (!resultData) {
@@ -259,89 +163,45 @@ function MealMacroPage() {
     }
   }, [resultData])
 
-  useEffect(() => {
-    setRatiosByTab((current) => ({
-      weekday: syncRatiosWithMeals(current.weekday, mealStructure.weekday.length),
-      weekend: syncRatiosWithMeals(current.weekend, mealStructure.weekend.length),
-    }))
-  }, [mealStructure])
-
   const goalResult = resultData?.goals[selectedGoal]
-
   const activeMeals = mealStructure[activeTab]
-  const activeRatios = ratiosByTab[activeTab]
 
-  const mealRows = useMemo(() => {
-    if (!goalResult) {
+  const mealCards = useMemo(() => {
+    if (!goalResult || activeMeals.length === 0) {
       return []
     }
 
-    return activeMeals.map((meal, index) => {
-      const ratio = Number(activeRatios[index] || 0)
-      const calories = Number(((goalResult.calories * ratio) / 100).toFixed(1))
-      const macros = calculateMealMacros(goalResult.macros, ratio)
+    const mealCalories = calculateEvenMealSplit(goalResult.calories, activeMeals.length)
+    const carbs = calculateEvenMealSplit(goalResult.macros.carbsGrams, activeMeals.length)
+    const protein = calculateEvenMealSplit(goalResult.macros.proteinGrams, activeMeals.length)
+    const fat = calculateEvenMealSplit(goalResult.macros.fatGrams, activeMeals.length)
 
-      return {
-        ...meal,
-        ratio,
-        calories,
-        macros,
-      }
-    })
-  }, [activeMeals, activeRatios, goalResult])
+    return activeMeals.map((meal, index) => ({
+      id: meal.id,
+      name: meal.name,
+      calories: mealCalories[index] ?? 0,
+      carbsGrams: carbs[index] ?? 0,
+      proteinGrams: protein[index] ?? 0,
+      fatGrams: fat[index] ?? 0,
+    }))
+  }, [activeMeals, goalResult])
 
   if (!resultData || !goalResult) {
     return null
-  }
-
-  const handleRatioChange = (index: number, event: ChangeEvent<HTMLInputElement>) => {
-    const nextValue = sanitizeRatioInput(event.target.value)
-
-    setRatiosByTab((current) => ({
-      ...current,
-      [activeTab]: current[activeTab].map((ratio, ratioIndex) =>
-        ratioIndex === index ? nextValue : ratio,
-      ),
-    }))
-  }
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    const weekdayTotal = ratiosByTab.weekday.reduce(
-      (sum, value) => sum + Number(value || 0),
-      0,
-    )
-    const weekendTotal = ratiosByTab.weekend.reduce(
-      (sum, value) => sum + Number(value || 0),
-      0,
-    )
-
-    if (Math.abs(weekdayTotal - 100) > 0.05) {
-      setActiveTab('weekday')
-      setIsModalOpen(true)
-      return
-    }
-
-    if (Math.abs(weekendTotal - 100) > 0.05) {
-      setActiveTab('weekend')
-      setIsModalOpen(true)
-      return
-    }
   }
 
   return (
     <PageLayout>
       <PageShell>
         <Header>
-          <StepTitle>Step4 끼니별 섭취 기준을 확인하고 조정해보세요</StepTitle>
+          <StepTitle>Step4 한번에 얼마나 먹어야 하는지 확인하세요</StepTitle>
           <Description>
-            입력한 식사 구조를 기준으로 끼니별 섭취 기준을 나눠봤어요
+            평일과 주말 식사 구조에 맞춰 한 끼 기준을 계산했어요
           </Description>
         </Header>
 
-        <Card as="form" onSubmit={handleSubmit}>
-          <TabList role="tablist" aria-label="끼니별 섭취 기준 탭">
+        <ContentCard>
+          <TabList role="tablist" aria-label="한 끼 기준 탭">
             {(Object.keys(TAB_LABELS) as MealStructureTabKey[]).map((tab) => (
               <TabButton
                 key={tab}
@@ -356,56 +216,44 @@ function MealMacroPage() {
             ))}
           </TabList>
 
-          <MealList>
-            {mealRows.map((meal, index) => (
-              <MealRow key={meal.id}>
-                <MealTop>
-                  <MealName>{meal.name}</MealName>
-                  <MealTime>{meal.time}</MealTime>
-                </MealTop>
-                <MealBottom>
-                  <RatioField htmlFor={`meal-ratio-${meal.id}`}>
-                    비중
-                    <RatioInput
-                      id={`meal-ratio-${meal.id}`}
-                      name={`meal-ratio-${meal.id}`}
-                      type="text"
-                      inputMode="decimal"
-                      value={activeRatios[index] ?? ''}
-                      onChange={(event) => handleRatioChange(index, event)}
-                    />
-                    %
-                  </RatioField>
-                  <KcalText>{meal.calories.toLocaleString('ko-KR')}kcal</KcalText>
-                  <MacroText>
-                    탄수화물 {meal.macros.carbsGrams.toLocaleString('ko-KR')}g / 단백질{' '}
-                    {meal.macros.proteinGrams.toLocaleString('ko-KR')}g / 지방{' '}
-                    {meal.macros.fatGrams.toLocaleString('ko-KR')}g
-                  </MacroText>
-                </MealBottom>
-              </MealRow>
+          <CardGrid>
+            {mealCards.map((meal) => (
+              <MealCard key={meal.id}>
+                <MealName>{meal.name}</MealName>
+                <KcalValue>{meal.calories.toLocaleString('ko-KR')} kcal</KcalValue>
+                <MacroGrid>
+                  <MacroCell>
+                    <MacroLabel>탄수화물</MacroLabel>
+                    <MacroValue>{meal.carbsGrams.toLocaleString('ko-KR')}g</MacroValue>
+                  </MacroCell>
+                  <MacroCell>
+                    <MacroLabel>단백질</MacroLabel>
+                    <MacroValue>{meal.proteinGrams.toLocaleString('ko-KR')}g</MacroValue>
+                  </MacroCell>
+                  <MacroCell>
+                    <MacroLabel>지방</MacroLabel>
+                    <MacroValue>{meal.fatGrams.toLocaleString('ko-KR')}g</MacroValue>
+                  </MacroCell>
+                </MacroGrid>
+              </MealCard>
             ))}
-          </MealList>
+          </CardGrid>
 
           <FooterActions>
-            <Button type="submit" $fullWidth>
+            <Button type="button" $fullWidth>
               다음
             </Button>
-          </FooterActions>
-        </Card>
-      </PageShell>
-
-      {isModalOpen ? (
-        <Overlay>
-          <ModalCard>
-            <ModalTitle>한번 더 확인해보세요</ModalTitle>
-            <ModalBody>끼니별 칼로리 비중 합계가 100%가 되어야 해요</ModalBody>
-            <Button type="button" $fullWidth onClick={() => setIsModalOpen(false)}>
-              수정하기
+            <Button
+              type="button"
+              $variant="secondary"
+              $fullWidth
+              onClick={() => navigateTo(ROUTES.goal)}
+            >
+              뒤로가기
             </Button>
-          </ModalCard>
-        </Overlay>
-      ) : null}
+          </FooterActions>
+        </ContentCard>
+      </PageShell>
     </PageLayout>
   )
 }

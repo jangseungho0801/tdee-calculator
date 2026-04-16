@@ -21,7 +21,7 @@ function getCurrentPath() {
     return ROUTES.goal
   }
 
-  if (pathname === '/meal-macro') {
+  if (pathname === '/daily-macro') {
     return ROUTES.mealMacro
   }
 
