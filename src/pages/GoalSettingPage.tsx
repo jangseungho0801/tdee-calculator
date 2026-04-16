@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
 import { navigateTo } from '../app/router/AppRouter.tsx'
 import Button from '../components/common/Button.tsx'
+import NumberInputField from '../components/common/NumberInputField.tsx'
 import PageLayout from '../components/common/PageLayout.tsx'
 import SectionCard from '../components/common/SectionCard.tsx'
 import StepTitle from '../components/common/StepTitle.tsx'
@@ -56,7 +57,7 @@ const FieldGrid = styled.div`
   gap: 18px;
 `
 
-const Field = styled.label`
+const Field = styled.div`
   display: grid;
   gap: 8px;
 `
@@ -79,97 +80,20 @@ const InlineInfo = styled.span`
   font-size: 0.92rem;
 `
 
-const INPUT_HEIGHT = '52px'
-const INPUT_SIDE_PADDING = '16px'
-const SUFFIX_SLOT_WIDTH = '88px'
-
-const Input = styled.input`
+const UnitSelect = styled.select`
   width: 100%;
-  min-height: ${INPUT_HEIGHT};
-  padding: 0 ${INPUT_SIDE_PADDING};
+  min-height: 52px;
+  padding: 0 16px;
   border-radius: 16px;
   border: 1px solid rgba(148, 163, 184, 0.36);
   background: rgba(248, 250, 252, 0.88);
   color: #0f172a;
-  line-height: ${INPUT_HEIGHT};
   outline: none;
-
-  &[type='number'] {
-    -moz-appearance: textfield;
-  }
-
-  &[type='number']::-webkit-inner-spin-button,
-  &[type='number']::-webkit-outer-spin-button {
-    margin: 0;
-    -webkit-appearance: none;
-  }
 
   &:focus {
     border-color: #2563eb;
     box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
   }
-`
-
-const InputWrap = styled.span`
-  position: relative;
-  display: block;
-`
-
-const InputWithSuffix = styled(Input)`
-  padding-right: calc(${SUFFIX_SLOT_WIDTH} + ${INPUT_SIDE_PADDING});
-`
-
-const SuffixSlot = styled.span`
-  position: absolute;
-  top: 0;
-  right: ${INPUT_SIDE_PADDING};
-  bottom: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  min-width: ${SUFFIX_SLOT_WIDTH};
-  pointer-events: none;
-`
-
-const SuffixText = styled.span`
-  color: #64748b;
-  font-size: 0.92rem;
-  line-height: 1;
-`
-
-const DurationSuffix = styled(SuffixSlot)`
-  pointer-events: none;
-`
-
-const DurationUnitSelect = styled.select`
-  height: calc(${INPUT_HEIGHT} - 2px);
-  padding: 0 20px 0 8px;
-  border: 0;
-  background: transparent;
-  color: #64748b;
-  font-size: 0.92rem;
-  line-height: 1;
-  appearance: none;
-  cursor: pointer;
-  outline: none;
-  pointer-events: auto;
-
-  &:focus {
-    color: #2563eb;
-  }
-`
-
-const DurationUnitCaret = styled.span`
-  position: absolute;
-  right: 2px;
-  color: #94a3b8;
-  font-size: 0.72rem;
-  line-height: 1;
-`
-
-const ErrorText = styled.span`
-  color: #b42318;
-  font-size: 0.92rem;
 `
 
 const FooterActions = styled.div`
@@ -507,63 +431,47 @@ function GoalSettingPage() {
 
           <FieldGrid>
             {selectedGoal !== 'maintain' ? (
-              <Field htmlFor="targetWeight">
+              <Field>
                 <LabelRow>
                   <Label>목표 체중</Label>
                   <InlineInfo>현재 체중: {formattedCurrentWeight}kg</InlineInfo>
                 </LabelRow>
-                <InputWrap>
-                  <InputWithSuffix
-                    id="targetWeight"
-                    name="targetWeight"
-                    type="number"
-                    min="0"
-                    inputMode="decimal"
-                    placeholder="예: 64"
-                    value={goalSettingData.targetWeight}
-                    onChange={handleFieldChange}
-                  />
-                  <SuffixSlot aria-hidden="true">
-                    <SuffixText>kg</SuffixText>
-                  </SuffixSlot>
-                </InputWrap>
-                {errors.targetWeight ? (
-                  <ErrorText>{errors.targetWeight}</ErrorText>
-                ) : null}
+                <NumberInputField
+                  id="targetWeight"
+                  name="targetWeight"
+                  label={undefined}
+                  placeholder="예: 64"
+                  suffix="kg"
+                  value={goalSettingData.targetWeight}
+                  error={errors.targetWeight}
+                  onChange={handleFieldChange}
+                />
               </Field>
             ) : null}
 
-            <Field htmlFor="durationValue">
+            <Field>
               <Label>목표 기간</Label>
-              <InputWrap>
-                <InputWithSuffix
+              <NumberInputField
                   id="durationValue"
                   name="durationValue"
-                  type="number"
-                  min="0"
-                  inputMode="numeric"
+                  label={undefined}
                   placeholder="예: 8"
+                  suffix=""
                   value={goalSettingData.durationValue}
+                  error={errors.durationValue}
                   onChange={handleFieldChange}
-                />
-                <DurationSuffix>
-                  <DurationUnitSelect
-                    id="durationUnit"
-                    name="durationUnit"
-                    aria-label="목표 기간 단위"
-                    value={goalSettingData.durationUnit}
-                    onChange={handleFieldChange}
-                  >
-                    <option value="day">일</option>
-                    <option value="week">주</option>
-                    <option value="month">개월</option>
-                  </DurationUnitSelect>
-                  <DurationUnitCaret aria-hidden="true">▾</DurationUnitCaret>
-                </DurationSuffix>
-              </InputWrap>
-              {errors.durationValue ? (
-                <ErrorText>{errors.durationValue}</ErrorText>
-              ) : null}
+              />
+              <UnitSelect
+                id="durationUnit"
+                name="durationUnit"
+                aria-label="목표 기간 단위"
+                value={goalSettingData.durationUnit}
+                onChange={handleFieldChange}
+              >
+                <option value="day">일</option>
+                <option value="week">주</option>
+                <option value="month">개월</option>
+              </UnitSelect>
             </Field>
           </FieldGrid>
 

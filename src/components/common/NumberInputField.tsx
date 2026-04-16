@@ -4,7 +4,7 @@ import styled from 'styled-components'
 type Props = {
   id: string
   name: string
-  label: string
+  label?: string
   placeholder: string
   value: string
   error?: string
@@ -76,7 +76,7 @@ function NumberInputField({
 }: Props) {
   return (
     <Wrapper htmlFor={id}>
-      <LabelText>{label}</LabelText>
+      {label ? <LabelText>{label}</LabelText> : null}
       {description ? <DescriptionText>{description}</DescriptionText> : null}
       <InputWrap>
         <Input
