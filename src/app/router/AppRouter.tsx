@@ -16,6 +16,10 @@ function getCurrentPath() {
     return ROUTES.result
   }
 
+  if (pathname === '/goal') {
+    return ROUTES.goal
+  }
+
   return pathname
 }
 

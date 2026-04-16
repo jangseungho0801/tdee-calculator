@@ -462,12 +462,15 @@ function GoalSettingPage() {
   return (
     <PageLayout>
       <PageShell>
+        <Header>
+          <Title>Step3 언제까지, 얼마나 바뀌고 싶은지 정해보세요</Title>
+          <Description>
+            현재 체중을 기준으로 목표 체중과 기간을 설정해보세요
+          </Description>
+        </Header>
+
         <Card as="form" ref={formRef} onSubmit={handleSubmit}>
           <Header>
-            <Title>Step3 어디까지, 언제까지 갈지 정해보세요</Title>
-            <Description>
-              현재 체중을 기준으로 목표 체중과 기간을 설정해보세요
-            </Description>
             <Question>{QUESTION_COPY[selectedGoal]}</Question>
             {selectedGoal === 'maintain' ? (
               <CurrentWeightNote>현재 체중: {formattedCurrentWeight}kg</CurrentWeightNote>
