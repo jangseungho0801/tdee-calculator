@@ -205,7 +205,7 @@ function InputForm({
   return (
     <Form onSubmit={handleSubmit}>
       <Header>
-        <Title>닭가슴살부터 먹지 말고, 기준부터 확인하세요</Title>
+        <Title>Step1 닭가슴살부터 먹지 말고, 기준부터 확인하세요</Title>
         <Description>
           기본 정보와 활동량을 입력하면 내 몸에 맞는 섭취 기준을 계산할 수
           있어요
