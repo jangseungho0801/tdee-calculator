@@ -80,6 +80,13 @@ const InlineInfo = styled.span`
   font-size: 0.92rem;
 `
 
+const DurationRow = styled.div`
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px;
+  gap: 12px;
+  align-items: start;
+`
+
 const UnitSelect = styled.select`
   width: 100%;
   min-height: 52px;
@@ -451,7 +458,8 @@ function GoalSettingPage() {
 
             <Field>
               <Label>목표 기간</Label>
-              <NumberInputField
+              <DurationRow>
+                <NumberInputField
                   id="durationValue"
                   name="durationValue"
                   label={undefined}
@@ -460,18 +468,19 @@ function GoalSettingPage() {
                   value={goalSettingData.durationValue}
                   error={errors.durationValue}
                   onChange={handleFieldChange}
-              />
-              <UnitSelect
-                id="durationUnit"
-                name="durationUnit"
-                aria-label="목표 기간 단위"
-                value={goalSettingData.durationUnit}
-                onChange={handleFieldChange}
-              >
-                <option value="day">일</option>
-                <option value="week">주</option>
-                <option value="month">개월</option>
-              </UnitSelect>
+                />
+                <UnitSelect
+                  id="durationUnit"
+                  name="durationUnit"
+                  aria-label="목표 기간 단위"
+                  value={goalSettingData.durationUnit}
+                  onChange={handleFieldChange}
+                >
+                  <option value="day">일</option>
+                  <option value="week">주</option>
+                  <option value="month">개월</option>
+                </UnitSelect>
+              </DurationRow>
             </Field>
           </FieldGrid>
 
