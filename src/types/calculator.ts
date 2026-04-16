@@ -73,6 +73,10 @@ export type TdeeCalculatorContextValue = {
   setResultData: (value: CalculationResult | null) => void
   setSelectedGoal: (value: GoalType) => void
   setGoalSettingData: (value: GoalSettingData) => void
-  setMealStructure: (value: MealStructureItem[]) => void
+  setMealStructure: (
+    value:
+      | MealStructureItem[]
+      | ((current: MealStructureItem[]) => MealStructureItem[]),
+  ) => void
   resetCalculator: () => void
 }

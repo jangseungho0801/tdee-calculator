@@ -340,6 +340,20 @@ function hasMealErrors(mealErrors: MealItemErrors[]) {
   return mealErrors.some((error) => error.name || error.time)
 }
 
+function getNextMealId(mealStructure: MealStructureItem[]) {
+  const maxId = mealStructure.reduce((currentMax, meal) => {
+    const numericId = Number(meal.id.replace('meal-', ''))
+
+    if (!Number.isFinite(numericId)) {
+      return currentMax
+    }
+
+    return Math.max(currentMax, numericId)
+  }, 0)
+
+  return maxId + 1
+}
+
 function createMealItem(id: number): MealStructureItem {
   return {
     id: `meal-${id}`,
@@ -605,7 +619,10 @@ function GoalSettingPage() {
       return
     }
 
-    setMealStructure([...mealStructure, createMealItem(mealStructure.length + 1)])
+    setMealStructure((currentMeals) => [
+      ...currentMeals,
+      createMealItem(getNextMealId(currentMeals)),
+    ])
     setMealErrors([])
   }
 
@@ -614,23 +631,28 @@ function GoalSettingPage() {
       return
     }
 
-    setMealStructure(mealStructure.filter((meal) => meal.id !== mealId))
+    setMealStructure((currentMeals) =>
+      currentMeals.filter((meal) => meal.id !== mealId),
+    )
     setMealErrors([])
   }
 
   const handleMoveMeal = (index: number, direction: 'up' | 'down') => {
-    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    setMealStructure((currentMeals) => {
+      const targetIndex = direction === 'up' ? index - 1 : index + 1
 
-    if (targetIndex < 0 || targetIndex >= mealStructure.length) {
-      return
-    }
+      if (targetIndex < 0 || targetIndex >= currentMeals.length) {
+        return currentMeals
+      }
 
-    const nextMeals = [...mealStructure]
-    ;[nextMeals[index], nextMeals[targetIndex]] = [
-      nextMeals[targetIndex],
-      nextMeals[index],
-    ]
-    setMealStructure(nextMeals)
+      const nextMeals = [...currentMeals]
+      ;[nextMeals[index], nextMeals[targetIndex]] = [
+        nextMeals[targetIndex],
+        nextMeals[index],
+      ]
+
+      return nextMeals
+    })
     setMealErrors([])
   }
 
