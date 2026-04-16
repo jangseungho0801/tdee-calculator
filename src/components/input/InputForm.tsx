@@ -1,6 +1,7 @@
 import type { ChangeEvent, FormEvent } from 'react'
 import { useRef, useState } from 'react'
 import styled from 'styled-components'
+import StepTitle from '../common/StepTitle.tsx'
 import { ACTIVITY_LEVELS } from '../../constants/activityLevels'
 import type {
   CalculationResult,
@@ -27,14 +28,6 @@ const Header = styled.div`
   display: grid;
   gap: 10px;
   margin-bottom: 6px;
-`
-
-const Title = styled.h1`
-  margin: 0;
-  color: #111827;
-  font-size: clamp(2rem, 4vw, 3.1rem);
-  line-height: 1.12;
-  letter-spacing: -0.05em;
 `
 
 const Description = styled.p`
@@ -226,7 +219,7 @@ function InputForm({
   return (
     <Form ref={formRef} onSubmit={handleSubmit}>
       <Header>
-        <Title>Step1 닭가슴살부터 먹지 말고, 기준부터 확인하세요</Title>
+        <StepTitle>Step1 닭가슴살부터 먹지 말고, 기준부터 확인하세요</StepTitle>
         <Description>
           기본 정보와 활동량을 입력하면 내 몸에 맞는 섭취 기준을 계산할 수
           있어요

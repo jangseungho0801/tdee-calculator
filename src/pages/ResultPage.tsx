@@ -3,6 +3,7 @@ import styled from 'styled-components'
 import { navigateTo } from '../app/router/AppRouter.tsx'
 import Button from '../components/common/Button.tsx'
 import PageLayout from '../components/common/PageLayout.tsx'
+import StepTitle from '../components/common/StepTitle.tsx'
 import GoalResultPanel from '../components/result/GoalResultPanel.tsx'
 import GoalTabs from '../components/result/GoalTabs.tsx'
 import RecalculateButton from '../components/result/RecalculateButton.tsx'
@@ -20,14 +21,6 @@ const PageShell = styled.div`
 const Header = styled.header`
   display: grid;
   gap: 8px;
-`
-
-const Title = styled.h1`
-  margin: 0;
-  color: #111827;
-  font-size: clamp(2rem, 4vw, 3rem);
-  line-height: 1.15;
-  letter-spacing: -0.05em;
 `
 
 const ActionStack = styled.div`
@@ -52,7 +45,7 @@ function ResultPage() {
     <PageLayout>
       <PageShell>
         <Header>
-          <Title>Step2 하루 권장 칼로리를 확인하고, 하루 식단을 구성하세요</Title>
+          <StepTitle>Step2 하루 권장 칼로리를 확인하고, 하루 식단을 구성하세요</StepTitle>
         </Header>
         <ResultHeader tdee={resultData.tdee} bmr={resultData.bmr} />
         <GoalTabs activeGoal={selectedGoal} onChange={setSelectedGoal} />

@@ -5,6 +5,7 @@ import { navigateTo } from '../app/router/AppRouter.tsx'
 import Button from '../components/common/Button.tsx'
 import PageLayout from '../components/common/PageLayout.tsx'
 import SectionCard from '../components/common/SectionCard.tsx'
+import StepTitle from '../components/common/StepTitle.tsx'
 import { ROUTES } from '../constants/routes'
 import { useTdeeCalculator } from '../hooks/useTdeeCalculator'
 import type {
@@ -28,14 +29,6 @@ const Card = styled(SectionCard)`
 const Header = styled.header`
   display: grid;
   gap: 10px;
-`
-
-const Title = styled.h1`
-  margin: 0;
-  color: #0f172a;
-  font-size: clamp(2rem, 4vw, 2.8rem);
-  line-height: 1.15;
-  letter-spacing: -0.04em;
 `
 
 const Description = styled.p`
@@ -86,15 +79,30 @@ const InlineInfo = styled.span`
   font-size: 0.92rem;
 `
 
+const INPUT_HEIGHT = '52px'
+const INPUT_SIDE_PADDING = '16px'
+const SUFFIX_SLOT_WIDTH = '88px'
+
 const Input = styled.input`
   width: 100%;
-  min-height: 52px;
-  padding: 0 16px;
+  min-height: ${INPUT_HEIGHT};
+  padding: 0 ${INPUT_SIDE_PADDING};
   border-radius: 16px;
   border: 1px solid rgba(148, 163, 184, 0.36);
   background: rgba(248, 250, 252, 0.88);
   color: #0f172a;
+  line-height: ${INPUT_HEIGHT};
   outline: none;
+
+  &[type='number'] {
+    -moz-appearance: textfield;
+  }
+
+  &[type='number']::-webkit-inner-spin-button,
+  &[type='number']::-webkit-outer-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+  }
 
   &:focus {
     border-color: #2563eb;
@@ -107,36 +115,56 @@ const InputWrap = styled.span`
   display: block;
 `
 
-const Suffix = styled.span`
+const InputWithSuffix = styled(Input)`
+  padding-right: calc(${SUFFIX_SLOT_WIDTH} + ${INPUT_SIDE_PADDING});
+`
+
+const SuffixSlot = styled.span`
   position: absolute;
-  top: 50%;
-  right: 16px;
-  transform: translateY(-50%);
+  top: 0;
+  right: ${INPUT_SIDE_PADDING};
+  bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: ${SUFFIX_SLOT_WIDTH};
+  pointer-events: none;
+`
+
+const SuffixText = styled.span`
   color: #64748b;
   font-size: 0.92rem;
+  line-height: 1;
 `
 
-const DurationRow = styled.div`
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 116px;
-  gap: 12px;
-  align-items: end;
+const DurationSuffix = styled(SuffixSlot)`
+  pointer-events: none;
 `
 
-const Select = styled.select`
-  width: 100%;
-  min-height: 52px;
-  padding: 0 16px;
-  border-radius: 16px;
-  border: 1px solid rgba(148, 163, 184, 0.36);
-  background: rgba(248, 250, 252, 0.88);
-  color: #0f172a;
+const DurationUnitSelect = styled.select`
+  height: calc(${INPUT_HEIGHT} - 2px);
+  padding: 0 20px 0 8px;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.92rem;
+  line-height: 1;
+  appearance: none;
+  cursor: pointer;
   outline: none;
+  pointer-events: auto;
 
   &:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    color: #2563eb;
   }
+`
+
+const DurationUnitCaret = styled.span`
+  position: absolute;
+  right: 2px;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  line-height: 1;
 `
 
 const ErrorText = styled.span`
@@ -463,7 +491,7 @@ function GoalSettingPage() {
     <PageLayout>
       <PageShell>
         <Header>
-          <Title>Step3 언제까지, 얼마나 바뀌고 싶은지 정해보세요</Title>
+          <StepTitle>Step3 언제까지, 얼마나 바뀌고 싶은지 정해보세요</StepTitle>
           <Description>
             현재 체중을 기준으로 목표 체중과 기간을 설정해보세요
           </Description>
@@ -485,7 +513,7 @@ function GoalSettingPage() {
                   <InlineInfo>현재 체중: {formattedCurrentWeight}kg</InlineInfo>
                 </LabelRow>
                 <InputWrap>
-                  <Input
+                  <InputWithSuffix
                     id="targetWeight"
                     name="targetWeight"
                     type="number"
@@ -495,7 +523,9 @@ function GoalSettingPage() {
                     value={goalSettingData.targetWeight}
                     onChange={handleFieldChange}
                   />
-                  <Suffix>kg</Suffix>
+                  <SuffixSlot aria-hidden="true">
+                    <SuffixText>kg</SuffixText>
+                  </SuffixSlot>
                 </InputWrap>
                 {errors.targetWeight ? (
                   <ErrorText>{errors.targetWeight}</ErrorText>
@@ -505,8 +535,8 @@ function GoalSettingPage() {
 
             <Field htmlFor="durationValue">
               <Label>목표 기간</Label>
-              <DurationRow>
-                <Input
+              <InputWrap>
+                <InputWithSuffix
                   id="durationValue"
                   name="durationValue"
                   type="number"
@@ -516,17 +546,21 @@ function GoalSettingPage() {
                   value={goalSettingData.durationValue}
                   onChange={handleFieldChange}
                 />
-                <Select
-                  id="durationUnit"
-                  name="durationUnit"
-                  value={goalSettingData.durationUnit}
-                  onChange={handleFieldChange}
-                >
-                  <option value="day">일</option>
-                  <option value="week">주</option>
-                  <option value="month">개월</option>
-                </Select>
-              </DurationRow>
+                <DurationSuffix>
+                  <DurationUnitSelect
+                    id="durationUnit"
+                    name="durationUnit"
+                    aria-label="목표 기간 단위"
+                    value={goalSettingData.durationUnit}
+                    onChange={handleFieldChange}
+                  >
+                    <option value="day">일</option>
+                    <option value="week">주</option>
+                    <option value="month">개월</option>
+                  </DurationUnitSelect>
+                  <DurationUnitCaret aria-hidden="true">▾</DurationUnitCaret>
+                </DurationSuffix>
+              </InputWrap>
               {errors.durationValue ? (
                 <ErrorText>{errors.durationValue}</ErrorText>
               ) : null}
