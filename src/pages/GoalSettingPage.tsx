@@ -153,7 +153,7 @@ const MealList = styled.div`
 
 const MealRow = styled.div`
   display: grid;
-  grid-template-columns: 44px minmax(0, 7fr) minmax(112px, 3fr) 40px;
+  grid-template-columns: 44px minmax(0, 1fr) 40px;
   gap: 10px;
   align-items: start;
 `
@@ -197,13 +197,6 @@ const MealTextInput = styled.input`
     border-color: #2563eb;
     box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
   }
-`
-
-const MealTimeInput = styled(MealTextInput).attrs({
-  type: 'time',
-})`
-  text-align: center;
-  font-variant-numeric: tabular-nums;
 `
 
 const RemoveMealButton = styled.button`
@@ -335,12 +328,10 @@ type GoalSettingErrors = {
 
 type MealItemErrors = {
   name?: string
-  time?: string
 }
 
 type MealErrorsByTab = Record<MealStructureTabKey, MealItemErrors[]>
 
-const TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$/
 const MEAL_TAB_LABELS: Record<MealStructureTabKey, string> = {
   weekday: '평일',
   weekend: '주말',
@@ -367,12 +358,6 @@ function validateMealStructure(mealStructure: MealStructureItem[]) {
 
     if (!meal.name.trim()) {
       errors.name = '식사 이름을 입력해주세요.'
-    }
-
-    if (!meal.time.trim()) {
-      errors.time = '식사 시간을 입력해주세요.'
-    } else if (!TIME_PATTERN.test(meal.time)) {
-      errors.time = '식사 시간은 HH:MM 형식으로 입력해주세요.'
     }
 
     return errors
@@ -404,7 +389,7 @@ function createMealItemForTab(id: number, tab: MealStructureTabKey): MealStructu
   return {
     id: `${tab}-meal-${id}`,
     name: `식사 ${id}`,
-    time: '08:00',
+    time: '',
   }
 }
 
@@ -541,7 +526,7 @@ function collectWarnings(
   const weeklyChangeGrams =
     (Math.abs(targetWeight - currentWeight) * 1000) / (durationDays / 7)
 
-  if (weeklyChangeGrams > 500) {
+  if (weeklyChangeGrams > 800) {
     warnings.push(buildRateWarningMessage(goalType, goalSettingData, currentWeight))
   }
 
@@ -659,32 +644,6 @@ function GoalSettingPage() {
         ...current,
         [activeMealTab]: (current[activeMealTab] ?? []).map((error, index) =>
           activeMeals[index]?.id === mealId ? { ...error, name: undefined } : error,
-        ),
-      }) as MealErrorsByTab,
-    )
-  }
-
-  const handleMealTimeChange = (
-    mealId: string,
-    event: ChangeEvent<HTMLInputElement>,
-  ) => {
-    setMealStructure(
-      Object.fromEntries(
-        Object.entries(mealStructure).map(([tabKey, meals]) => [
-          tabKey,
-          tabKey === activeMealTab
-            ? meals.map((meal) =>
-                meal.id === mealId ? { ...meal, time: event.target.value } : meal,
-              )
-            : meals,
-        ]),
-      ) as MealStructureByTab,
-    )
-    setMealErrors((current) =>
-      ({
-        ...current,
-        [activeMealTab]: (current[activeMealTab] ?? []).map((error, index) =>
-          activeMeals[index]?.id === mealId ? { ...error, time: undefined } : error,
         ),
       }) as MealErrorsByTab,
     )
@@ -927,17 +886,6 @@ function GoalSettingPage() {
                           <FieldErrorText>{activeMealErrors[index]?.name}</FieldErrorText>
                         ) : null}
                       </div>
-                      <div>
-                        <MealTimeInput
-                          id={`meal-time-${meal.id}`}
-                          name={`meal-time-${meal.id}`}
-                          value={meal.time}
-                          onChange={(event) => handleMealTimeChange(meal.id, event)}
-                        />
-                        {activeMealErrors[index]?.time ? (
-                          <FieldErrorText>{activeMealErrors[index]?.time}</FieldErrorText>
-                        ) : null}
-                      </div>
                       <RemoveMealButton
                         type="button"
                         aria-label={`${meal.name || `식사 ${index + 1}`} 삭제`}
@@ -980,6 +928,14 @@ function GoalSettingPage() {
               <FooterActions>
                 <Button type="submit" $fullWidth>
                   다음
+                </Button>
+                <Button
+                  type="button"
+                  $variant="secondary"
+                  $fullWidth
+                  onClick={() => navigateTo(ROUTES.result)}
+                >
+                  뒤로가기
                 </Button>
               </FooterActions>
             </MealSection>
