@@ -3,4 +3,5 @@ export const ROUTES = {
   input: '/basic-info',
   result: '/daily-calories',
   goal: '/daily-meal',
+  mealMacro: '/meal-macro',
 } as const

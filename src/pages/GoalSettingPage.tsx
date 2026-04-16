@@ -748,7 +748,7 @@ function GoalSettingPage() {
   const proceedToNextStep = () => {
     setIsModalOpen(false)
     setWarningMessages([])
-    navigateTo(ROUTES.result)
+    navigateTo(ROUTES.mealMacro)
   }
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {

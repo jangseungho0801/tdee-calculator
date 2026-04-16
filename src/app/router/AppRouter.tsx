@@ -3,6 +3,7 @@ import { ROUTES } from '../../constants/routes'
 import GoalSettingPage from '../../pages/GoalSettingPage.tsx'
 import InputPage from '../../pages/InputPage.tsx'
 import IntroPage from '../../pages/IntroPage.tsx'
+import MealMacroPage from '../../pages/MealMacroPage.tsx'
 import ResultPage from '../../pages/ResultPage.tsx'
 
 function getCurrentPath() {
@@ -18,6 +19,10 @@ function getCurrentPath() {
 
   if (pathname === '/goal') {
     return ROUTES.goal
+  }
+
+  if (pathname === '/meal-macro') {
+    return ROUTES.mealMacro
   }
 
   return pathname
@@ -57,6 +62,10 @@ function AppRouter() {
 
   if (pathname === ROUTES.goal) {
     return <GoalSettingPage />
+  }
+
+  if (pathname === ROUTES.mealMacro) {
+    return <MealMacroPage />
   }
 
   return <IntroPage />
