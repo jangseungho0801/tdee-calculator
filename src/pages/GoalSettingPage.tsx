@@ -27,6 +27,14 @@ const Card = styled(SectionCard)`
   gap: 24px;
 `
 
+const SummaryCard = styled.section`
+  padding: 16px 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(191, 219, 254, 0.9);
+  background: rgba(248, 250, 252, 0.92);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+`
+
 const Header = styled.header`
   display: grid;
   gap: 10px;
@@ -78,6 +86,14 @@ const Label = styled.span`
 const InlineInfo = styled.span`
   color: #64748b;
   font-size: 0.92rem;
+`
+
+const SummaryText = styled.p`
+  margin: 0;
+  color: #334155;
+  font-size: 0.96rem;
+  font-weight: 600;
+  line-height: 1.5;
 `
 
 const DurationRow = styled.div`
@@ -159,6 +175,12 @@ const QUESTION_COPY: Record<GoalType, string> = {
   cut: '언제까지 몇kg을 빼고 싶으세요?',
   maintain: '언제까지 지금 체중을 유지하고 싶으세요?',
   bulk: '언제까지 몇kg을 늘리고 싶으세요?',
+}
+
+const GOAL_LABELS: Record<GoalType, string> = {
+  cut: '다이어트',
+  maintain: '유지',
+  bulk: '벌크업',
 }
 
 const DURATION_WARNING_COPY: Record<GoalType, string> = {
@@ -427,6 +449,12 @@ function GoalSettingPage() {
             현재 체중을 기준으로 목표 체중과 기간을 설정해보세요
           </Description>
         </Header>
+
+        <SummaryCard aria-label="현재 상태 요약">
+          <SummaryText>
+            현재 목표 : {GOAL_LABELS[selectedGoal]} | 현재 체중 : {formattedCurrentWeight}kg
+          </SummaryText>
+        </SummaryCard>
 
         <Card as="form" ref={formRef} onSubmit={handleSubmit}>
           <Header>
