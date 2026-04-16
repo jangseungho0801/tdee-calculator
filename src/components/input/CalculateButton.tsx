@@ -14,7 +14,7 @@ const SubmitButton = styled(Button)`
 function CalculateButton() {
   return (
     <SubmitButton type="submit" $fullWidth>
-      하루 권장 칼로리 보러가기
+      내 기준 보러가기
     </SubmitButton>
   )
 }

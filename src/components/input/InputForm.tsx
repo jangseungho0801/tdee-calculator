@@ -1,5 +1,5 @@
 import type { ChangeEvent, FormEvent } from 'react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import styled from 'styled-components'
 import { ACTIVITY_LEVELS } from '../../constants/activityLevels'
 import type {
@@ -43,14 +43,6 @@ const Description = styled.p`
   color: #4b5563;
   font-size: 1rem;
   line-height: 1.7;
-`
-
-const ErrorBanner = styled.div`
-  padding: 14px 16px;
-  border-radius: 18px;
-  background: #fef2f2;
-  color: #b42318;
-  border: 1px solid rgba(244, 63, 94, 0.22);
 `
 
 const FooterAction = styled.div`
@@ -158,14 +150,37 @@ function buildCalculationResult(inputData: ParsedInputData): CalculationResult {
   }
 }
 
+const FIELD_FOCUS_ORDER: Array<keyof ValidationErrors> = [
+  'gender',
+  'age',
+  'height',
+  'weight',
+  'activityLevel',
+  'bodyFatPercentage',
+]
+
+function focusFieldByName(form: HTMLFormElement, fieldName: keyof ValidationErrors) {
+  const target =
+    fieldName === 'gender' || fieldName === 'activityLevel'
+      ? form.querySelector<HTMLInputElement>(`input[name="${fieldName}"]`)
+      : form.querySelector<HTMLInputElement>(`#${fieldName}`)
+
+  if (!target) {
+    return
+  }
+
+  target.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  target.focus()
+}
+
 function InputForm({
   inputData,
   setInputData,
   setResultData,
   onSuccess,
 }: Props) {
+  const formRef = useRef<HTMLFormElement | null>(null)
   const [errors, setErrors] = useState<ValidationErrors>({})
-  const [errorBanner, setErrorBanner] = useState('')
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = event.target
@@ -189,7 +204,14 @@ function InputForm({
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors)
-      setErrorBanner('기본정보를 모두 입력해주세요')
+      const firstErrorField = FIELD_FOCUS_ORDER.find(
+        (fieldName) => nextErrors[fieldName],
+      )
+
+      if (formRef.current && firstErrorField) {
+        focusFieldByName(formRef.current, firstErrorField)
+      }
+
       return
     }
 
@@ -197,21 +219,19 @@ function InputForm({
     const result = buildCalculationResult(parsedInputData)
 
     setErrors({})
-    setErrorBanner('')
     setResultData(result)
     onSuccess()
   }
 
   return (
-    <Form onSubmit={handleSubmit}>
+    <Form ref={formRef} onSubmit={handleSubmit}>
       <Header>
-        <Title>Step1 닭가슴살부터 먹지 말고, 기준부터 확인하세요</Title>
+        <Title>닭가슴살부터 먹지 말고, 기준부터 확인하세요</Title>
         <Description>
           기본 정보와 활동량을 입력하면 내 몸에 맞는 섭취 기준을 계산할 수
           있어요
         </Description>
       </Header>
-      {errorBanner ? <ErrorBanner>{errorBanner}</ErrorBanner> : null}
       <BasicInfoSection inputData={inputData} errors={errors} onChange={handleChange} />
       <AdditionalInfoSection
         inputData={inputData}

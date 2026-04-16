@@ -6,7 +6,17 @@ import IntroPage from '../../pages/IntroPage.tsx'
 import ResultPage from '../../pages/ResultPage.tsx'
 
 function getCurrentPath() {
-  return window.location.pathname || ROUTES.intro
+  const pathname = window.location.pathname || ROUTES.intro
+
+  if (pathname === '/input') {
+    return ROUTES.input
+  }
+
+  if (pathname === '/result') {
+    return ROUTES.result
+  }
+
+  return pathname
 }
 
 export function navigateTo(path: string) {

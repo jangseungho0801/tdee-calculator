@@ -1,5 +1,5 @@
 import type { ChangeEvent, FormEvent } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
 import { navigateTo } from '../app/router/AppRouter.tsx'
 import Button from '../components/common/Button.tsx'
@@ -30,18 +30,26 @@ const Header = styled.header`
   gap: 10px;
 `
 
-const Eyebrow = styled.span`
-  color: #1d4ed8;
-  font-size: 0.92rem;
-  font-weight: 700;
-`
-
 const Title = styled.h1`
   margin: 0;
   color: #0f172a;
   font-size: clamp(2rem, 4vw, 2.8rem);
   line-height: 1.15;
   letter-spacing: -0.04em;
+`
+
+const Description = styled.p`
+  margin: 0;
+  color: #475569;
+  line-height: 1.6;
+`
+
+const Question = styled.p`
+  margin: 0;
+  color: #111827;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.5;
 `
 
 const CurrentWeightNote = styled.p`
@@ -322,6 +330,25 @@ function collectWarnings(
   return warnings
 }
 
+const FIELD_FOCUS_ORDER: Array<keyof GoalSettingErrors> = [
+  'targetWeight',
+  'durationValue',
+]
+
+function focusGoalField(
+  form: HTMLFormElement,
+  fieldName: keyof GoalSettingErrors,
+) {
+  const target = form.querySelector<HTMLElement>(`#${fieldName}`)
+
+  if (!target) {
+    return
+  }
+
+  target.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  target.focus()
+}
+
 function GoalSettingPage() {
   const {
     inputData,
@@ -330,6 +357,7 @@ function GoalSettingPage() {
     goalSettingData,
     setGoalSettingData,
   } = useTdeeCalculator()
+  const formRef = useRef<HTMLFormElement | null>(null)
   const [errors, setErrors] = useState<GoalSettingErrors>({})
   const [warningMessages, setWarningMessages] = useState<string[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -403,6 +431,14 @@ function GoalSettingPage() {
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors)
+      const firstErrorField = FIELD_FOCUS_ORDER.find(
+        (fieldName) => nextErrors[fieldName],
+      )
+
+      if (formRef.current && firstErrorField) {
+        focusGoalField(formRef.current, firstErrorField)
+      }
+
       return
     }
 
@@ -426,10 +462,13 @@ function GoalSettingPage() {
   return (
     <PageLayout>
       <PageShell>
-        <Card as="form" onSubmit={handleSubmit}>
+        <Card as="form" ref={formRef} onSubmit={handleSubmit}>
           <Header>
-            <Eyebrow>목표 설정</Eyebrow>
-            <Title>{QUESTION_COPY[selectedGoal]}</Title>
+            <Title>Step3 어디까지, 언제까지 갈지 정해보세요</Title>
+            <Description>
+              현재 체중을 기준으로 목표 체중과 기간을 설정해보세요
+            </Description>
+            <Question>{QUESTION_COPY[selectedGoal]}</Question>
             {selectedGoal === 'maintain' ? (
               <CurrentWeightNote>현재 체중: {formattedCurrentWeight}kg</CurrentWeightNote>
             ) : null}

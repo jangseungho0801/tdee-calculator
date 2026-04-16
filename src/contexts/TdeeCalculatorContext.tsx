@@ -13,7 +13,7 @@ const initialInputData: InputData = {
   age: '',
   height: '',
   weight: '',
-  activityLevel: '',
+  activityLevel: 'moderate',
   bodyFatPercentage: '',
 }
 

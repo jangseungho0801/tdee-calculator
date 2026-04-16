@@ -17,6 +17,19 @@ const PageShell = styled.div`
   gap: 18px;
 `
 
+const Header = styled.header`
+  display: grid;
+  gap: 8px;
+`
+
+const Title = styled.h1`
+  margin: 0;
+  color: #111827;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.15;
+  letter-spacing: -0.05em;
+`
+
 const ActionStack = styled.div`
   display: grid;
   gap: 12px;
@@ -38,6 +51,9 @@ function ResultPage() {
   return (
     <PageLayout>
       <PageShell>
+        <Header>
+          <Title>Step2 하루 권장 칼로리를 확인하고, 하루 식단을 구성하세요</Title>
+        </Header>
         <ResultHeader tdee={resultData.tdee} bmr={resultData.bmr} />
         <GoalTabs activeGoal={selectedGoal} onChange={setSelectedGoal} />
         <GoalResultPanel

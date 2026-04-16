@@ -1,6 +1,6 @@
 export const ROUTES = {
   intro: '/',
-  input: '/input',
-  result: '/result',
+  input: '/basic-info',
+  result: '/daily-calories',
   goal: '/goal',
 } as const
