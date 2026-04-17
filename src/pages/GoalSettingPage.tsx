@@ -364,9 +364,9 @@ const MACRO_FOCUS_LABELS: Record<MealMacroFocus, string> = {
 }
 
 const MEAL_AMOUNT_LABELS: Record<MealAmount, string> = {
-  small: '적게',
-  normal: '보통',
-  large: '많이',
+  small: '적게 먹기',
+  normal: '보통 먹기',
+  large: '많이 먹기',
 }
 
 type GoalSettingErrors = {
