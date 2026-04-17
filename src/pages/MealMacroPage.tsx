@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from 'react'
 import styled from 'styled-components'
 import { navigateTo } from '../app/router/AppRouter.tsx'
 import Button from '../components/common/Button.tsx'
+import FixedBottomActions from '../components/common/FixedBottomActions.tsx'
 import PageLayout from '../components/common/PageLayout.tsx'
 import SectionCard from '../components/common/SectionCard.tsx'
 import StepTitle from '../components/common/StepTitle.tsx'
 import { ROUTES } from '../constants/routes'
 import { useTdeeCalculator } from '../hooks/useTdeeCalculator'
-import type { MealStructureTabKey } from '../types/calculator'
+import type { MealAmount, MealMacroFocus, MealStructureTabKey } from '../types/calculator'
+import { buildMealMacroCards } from '../utils/calculations/mealMacros'
 
 const PageShell = styled.div`
   width: min(100%, 760px);
@@ -81,12 +83,39 @@ const MealCard = styled.article`
     inset 0 1px 0 rgba(255, 255, 255, 0.65);
 `
 
+const MealHeaderRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+`
+
 const MealName = styled.h2`
   margin: 0;
   color: #111827;
   font-size: 1.05rem;
   font-weight: 800;
   line-height: 1.4;
+`
+
+const BadgeGroup = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+`
+
+const Badge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(219, 234, 254, 0.78);
+  color: #1d4ed8;
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
 `
 
 const KcalValue = styled.p`
@@ -126,27 +155,21 @@ const MacroValue = styled.span`
   font-weight: 800;
 `
 
-const FooterActions = styled.div`
-  display: grid;
-  gap: 10px;
-`
-
 const TAB_LABELS: Record<MealStructureTabKey, string> = {
   weekday: '평일',
   weekend: '주말',
 }
 
-function calculateEvenMealSplit(total: number, count: number) {
-  if (count <= 0) {
-    return []
-  }
+const MACRO_FOCUS_LABELS: Record<MealMacroFocus, string> = {
+  carb: '탄수화물 중심',
+  protein: '단백질 중심',
+  fat: '지방 중심',
+}
 
-  const baseValue = total / count
-  const values = Array.from({ length: count }, () => Number(baseValue.toFixed(1)))
-  const sumWithoutLast = values.slice(0, -1).reduce((sum, value) => sum + value, 0)
-  values[count - 1] = Number((total - sumWithoutLast).toFixed(1))
-
-  return values
+const MEAL_AMOUNT_LABELS: Record<MealAmount, string> = {
+  small: '적게',
+  normal: '보통',
+  large: '많이',
 }
 
 function MealMacroPage() {
@@ -167,19 +190,7 @@ function MealMacroPage() {
       return []
     }
 
-    const mealCalories = calculateEvenMealSplit(goalResult.calories, activeMeals.length)
-    const carbs = calculateEvenMealSplit(goalResult.macros.carbsGrams, activeMeals.length)
-    const protein = calculateEvenMealSplit(goalResult.macros.proteinGrams, activeMeals.length)
-    const fat = calculateEvenMealSplit(goalResult.macros.fatGrams, activeMeals.length)
-
-    return activeMeals.map((meal, index) => ({
-      id: meal.id,
-      name: meal.name,
-      calories: mealCalories[index] ?? 0,
-      carbsGrams: carbs[index] ?? 0,
-      proteinGrams: protein[index] ?? 0,
-      fatGrams: fat[index] ?? 0,
-    }))
+    return buildMealMacroCards(goalResult, activeMeals)
   }, [activeMeals, goalResult])
 
   if (!resultData || !goalResult) {
@@ -197,7 +208,7 @@ function MealMacroPage() {
         </Header>
 
         <ContentCard>
-          <TabList role="tablist" aria-label="한 끼 기준 탭">
+          <TabList role="tablist" aria-label="평일 주말 탭">
             {(Object.keys(TAB_LABELS) as MealStructureTabKey[]).map((tab) => (
               <TabButton
                 key={tab}
@@ -215,7 +226,13 @@ function MealMacroPage() {
           <CardGrid>
             {mealCards.map((meal) => (
               <MealCard key={meal.id}>
-                <MealName>{meal.name}</MealName>
+                <MealHeaderRow>
+                  <MealName>{meal.name}</MealName>
+                  <BadgeGroup>
+                    <Badge>{MACRO_FOCUS_LABELS[meal.macroFocus]}</Badge>
+                    <Badge>{MEAL_AMOUNT_LABELS[meal.amount]}</Badge>
+                  </BadgeGroup>
+                </MealHeaderRow>
                 <KcalValue>{meal.calories.toLocaleString('ko-KR')} kcal</KcalValue>
                 <MacroGrid>
                   <MacroCell>
@@ -234,21 +251,21 @@ function MealMacroPage() {
               </MealCard>
             ))}
           </CardGrid>
-
-          <FooterActions>
-            <Button type="button" $fullWidth>
-              다음
-            </Button>
-            <Button
-              type="button"
-              $variant="secondary"
-              $fullWidth
-              onClick={() => navigateTo(ROUTES.goal)}
-            >
-              뒤로가기
-            </Button>
-          </FooterActions>
         </ContentCard>
+
+        <FixedBottomActions maxWidth="760px">
+          <Button type="button" $fullWidth>
+            다음
+          </Button>
+          <Button
+            type="button"
+            $variant="secondary"
+            $fullWidth
+            onClick={() => navigateTo(ROUTES.goal)}
+          >
+            뒤로가기
+          </Button>
+        </FixedBottomActions>
       </PageShell>
     </PageLayout>
   )

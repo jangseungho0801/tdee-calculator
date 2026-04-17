@@ -26,13 +26,38 @@ const initialGoalSettingData: GoalSettingData = {
 
 const initialMealStructure: MealStructureByTab = {
   weekday: [
-    { id: 'weekday-meal-1', name: '아침', time: '08:00' },
-    { id: 'weekday-meal-2', name: '점심', time: '13:00' },
-    { id: 'weekday-meal-3', name: '저녁', time: '19:00' },
+    {
+      id: 'weekday-meal-1',
+      name: '아침',
+      macroFocus: 'carb',
+      amount: 'normal',
+    },
+    {
+      id: 'weekday-meal-2',
+      name: '점심',
+      macroFocus: 'carb',
+      amount: 'normal',
+    },
+    {
+      id: 'weekday-meal-3',
+      name: '저녁',
+      macroFocus: 'carb',
+      amount: 'normal',
+    },
   ],
   weekend: [
-    { id: 'weekend-meal-1', name: '아점', time: '10:00' },
-    { id: 'weekend-meal-2', name: '저녁', time: '18:30' },
+    {
+      id: 'weekend-meal-1',
+      name: '브런치',
+      macroFocus: 'carb',
+      amount: 'normal',
+    },
+    {
+      id: 'weekend-meal-2',
+      name: '저녁',
+      macroFocus: 'carb',
+      amount: 'normal',
+    },
   ],
 }
 

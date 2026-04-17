@@ -2,6 +2,7 @@ import type { ChangeEvent, FormEvent } from 'react'
 import { useRef, useState } from 'react'
 import styled from 'styled-components'
 import StepTitle from '../common/StepTitle.tsx'
+import FixedBottomActions from '../common/FixedBottomActions.tsx'
 import { ACTIVITY_LEVELS } from '../../constants/activityLevels'
 import type {
   CalculationResult,
@@ -38,12 +39,6 @@ const Description = styled.p`
   line-height: 1.7;
 `
 
-const FooterAction = styled.div`
-  position: sticky;
-  bottom: 20px;
-  z-index: 2;
-`
-
 type Props = {
   inputData: InputData
   setInputData: (value: InputData) => void
@@ -57,13 +52,13 @@ function sanitizeNumericInput(value: string) {
 
 function validatePositiveField(value: string, label: string) {
   if (!value.trim()) {
-    return `${label}를 입력해 주세요`
+    return `${label}를 입력해 주세요.`
   }
 
   const numericValue = Number(value)
 
   if (!Number.isFinite(numericValue) || numericValue <= 0) {
-    return `${label}는 0보다 큰 숫자여야 합니다`
+    return `${label}은 0보다 큰 숫자여야 합니다.`
   }
 
   return ''
@@ -73,7 +68,7 @@ function validateInputData(inputData: InputData): ValidationErrors {
   const errors: ValidationErrors = {}
 
   if (!inputData.gender) {
-    errors.gender = '성별을 선택해 주세요'
+    errors.gender = '성별을 선택해 주세요.'
   }
 
   errors.age = validatePositiveField(inputData.age, '나이')
@@ -81,16 +76,16 @@ function validateInputData(inputData: InputData): ValidationErrors {
   errors.weight = validatePositiveField(inputData.weight, '현재 체중')
 
   if (!inputData.activityLevel) {
-    errors.activityLevel = '평소 활동량을 선택해 주세요'
+    errors.activityLevel = '평소 활동량을 선택해 주세요.'
   }
 
   if (inputData.bodyFatPercentage.trim()) {
     const bodyFatValue = Number(inputData.bodyFatPercentage)
 
     if (!Number.isFinite(bodyFatValue) || bodyFatValue <= 0) {
-      errors.bodyFatPercentage = '체지방률은 0보다 큰 숫자여야 합니다'
+      errors.bodyFatPercentage = '체지방률은 0보다 큰 숫자여야 합니다.'
     } else if (bodyFatValue >= 100) {
-      errors.bodyFatPercentage = '체지방률은 100 미만이어야 합니다'
+      errors.bodyFatPercentage = '체지방률은 100 미만이어야 합니다.'
     }
   }
 
@@ -172,6 +167,7 @@ function InputForm({
   setResultData,
   onSuccess,
 }: Props) {
+  const formId = 'tdee-input-form'
   const formRef = useRef<HTMLFormElement | null>(null)
   const [errors, setErrors] = useState<ValidationErrors>({})
 
@@ -217,24 +213,30 @@ function InputForm({
   }
 
   return (
-    <Form ref={formRef} onSubmit={handleSubmit}>
-      <Header>
-        <StepTitle>Step1 닭가슴살부터 먹지 말고, 기준부터 확인하세요</StepTitle>
-        <Description>
-          기본 정보와 활동량을 입력하면 내 몸에 맞는 섭취 기준을 계산할 수
-          있어요
-        </Description>
-      </Header>
-      <BasicInfoSection inputData={inputData} errors={errors} onChange={handleChange} />
-      <AdditionalInfoSection
-        inputData={inputData}
-        errors={errors}
-        onChange={handleChange}
-      />
-      <FooterAction>
-        <CalculateButton />
-      </FooterAction>
-    </Form>
+    <>
+      <Form id={formId} ref={formRef} onSubmit={handleSubmit}>
+        <Header>
+          <StepTitle>Step1 내 몸에 맞는 기본 정보를 입력하세요</StepTitle>
+          <Description>
+            기본 정보와 활동량을 입력하면 내 몸에 맞는 하루 기준을 계산해드려요.
+          </Description>
+        </Header>
+        <BasicInfoSection
+          inputData={inputData}
+          errors={errors}
+          onChange={handleChange}
+        />
+        <AdditionalInfoSection
+          inputData={inputData}
+          errors={errors}
+          onChange={handleChange}
+        />
+      </Form>
+
+      <FixedBottomActions maxWidth="720px">
+        <CalculateButton form={formId} />
+      </FixedBottomActions>
+    </>
   )
 }
 

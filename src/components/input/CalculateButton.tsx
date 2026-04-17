@@ -1,8 +1,12 @@
 import Button from '../common/Button.tsx'
 
-function CalculateButton() {
+type Props = {
+  form?: string
+}
+
+function CalculateButton({ form }: Props) {
   return (
-    <Button type="submit" $fullWidth>
+    <Button type="submit" form={form} $fullWidth>
       하루 권장 칼로리 확인하기
     </Button>
   )

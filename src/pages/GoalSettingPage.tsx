@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
 import { navigateTo } from '../app/router/AppRouter.tsx'
 import Button from '../components/common/Button.tsx'
+import FixedBottomActions from '../components/common/FixedBottomActions.tsx'
 import NumberInputField from '../components/common/NumberInputField.tsx'
 import PageLayout from '../components/common/PageLayout.tsx'
 import SectionCard from '../components/common/SectionCard.tsx'
@@ -13,6 +14,8 @@ import type {
   GoalDurationUnit,
   GoalSettingData,
   GoalType,
+  MealAmount,
+  MealMacroFocus,
   MealStructureByTab,
   MealStructureItem,
   MealStructureTabKey,
@@ -153,9 +156,13 @@ const MealList = styled.div`
 
 const MealRow = styled.div`
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) 40px;
+  grid-template-columns: 44px minmax(0, 1.3fr) repeat(2, minmax(0, 148px)) 40px;
   gap: 10px;
   align-items: start;
+
+  @media (max-width: 720px) {
+    grid-template-columns: 44px minmax(0, 1fr) 40px;
+  }
 `
 
 const OrderButtons = styled.div`
@@ -196,6 +203,34 @@ const MealTextInput = styled.input`
   &:focus {
     border-color: #2563eb;
     box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+  }
+`
+
+const MealSelect = styled.select`
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.36);
+  background: rgba(248, 250, 252, 0.88);
+  color: #0f172a;
+  outline: none;
+
+  &:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+  }
+`
+
+const MealNameField = styled.div`
+  @media (max-width: 720px) {
+    grid-column: 2 / 4;
+  }
+`
+
+const MealSelectField = styled.div`
+  @media (max-width: 720px) {
+    grid-column: 2 / 4;
   }
 `
 
@@ -245,10 +280,6 @@ const UnitSelect = styled.select`
     border-color: #2563eb;
     box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
   }
-`
-
-const FooterActions = styled.div`
-  display: grid;
 `
 
 const Overlay = styled.div`
@@ -304,9 +335,9 @@ const SecondaryButton = styled(Button)`
 `
 
 const QUESTION_COPY: Record<GoalType, string> = {
-  cut: '언제까지 몇kg을 빼고 싶으세요?',
-  maintain: '언제까지 지금 체중을 유지하고 싶으세요?',
-  bulk: '언제까지 몇kg을 늘리고 싶으세요?',
+  cut: '언제까지 얼마나 감량하고 싶으세요?',
+  maintain: '언제까지 현재 체중을 유지하고 싶으세요?',
+  bulk: '언제까지 얼마나 증량하고 싶으세요?',
 }
 
 const GOAL_LABELS: Record<GoalType, string> = {
@@ -316,9 +347,26 @@ const GOAL_LABELS: Record<GoalType, string> = {
 }
 
 const DURATION_WARNING_COPY: Record<GoalType, string> = {
-  cut: '우선 최대 3개월 동안 식단을 진행하고 다시 목표를 설정하세요',
-  maintain: '우선 최대 3개월 동안 유지 식단을 진행하고 다시 목표를 설정하세요',
-  bulk: '우선 최대 3개월 동안 식단을 진행하고 다시 목표를 설정하세요',
+  cut: '우선 최대 3개월 동안 식단을 진행하고 다시 목표를 설정해보세요.',
+  maintain: '우선 최대 3개월 동안 유지 식단을 진행하고 다시 목표를 설정해보세요.',
+  bulk: '우선 최대 3개월 동안 식단을 진행하고 다시 목표를 설정해보세요.',
+}
+
+const MEAL_TAB_LABELS: Record<MealStructureTabKey, string> = {
+  weekday: '평일',
+  weekend: '주말',
+}
+
+const MACRO_FOCUS_LABELS: Record<MealMacroFocus, string> = {
+  carb: '탄수화물 중심',
+  protein: '단백질 중심',
+  fat: '지방 중심',
+}
+
+const MEAL_AMOUNT_LABELS: Record<MealAmount, string> = {
+  small: '적게',
+  normal: '보통',
+  large: '많이',
 }
 
 type GoalSettingErrors = {
@@ -331,11 +379,6 @@ type MealItemErrors = {
 }
 
 type MealErrorsByTab = Record<MealStructureTabKey, MealItemErrors[]>
-
-const MEAL_TAB_LABELS: Record<MealStructureTabKey, string> = {
-  weekday: '평일',
-  weekend: '주말',
-}
 
 function sanitizeWeightInput(value: string) {
   const sanitized = value.replace(/[^0-9.]/g, '')
@@ -365,7 +408,7 @@ function validateMealStructure(mealStructure: MealStructureItem[]) {
 }
 
 function hasMealErrors(mealErrors: MealItemErrors[]) {
-  return mealErrors.some((error) => error.name || error.time)
+  return mealErrors.some((error) => error.name)
 }
 
 function getNextMealId(
@@ -389,7 +432,8 @@ function createMealItemForTab(id: number, tab: MealStructureTabKey): MealStructu
   return {
     id: `${tab}-meal-${id}`,
     name: `식사 ${id}`,
-    time: '',
+    macroFocus: 'carb',
+    amount: 'normal',
   }
 }
 
@@ -430,10 +474,10 @@ function buildRateWarningMessage(
     : weightDelta.toFixed(1)
 
   if (goalType === 'cut') {
-    return `${durationLabel} 내 ${formattedDelta}kg을 빼시려구요?\n너무 급격한 감량은 건강에 좋지 않아요, 한번만 다시 생각해보세요`
+    return `${durationLabel} 안에 ${formattedDelta}kg 감량을 목표로 하고 있어요.\n너무 빠른 감량은 건강에 부담이 될 수 있어 다시 확인해보세요.`
   }
 
-  return `${durationLabel} 내 ${formattedDelta}kg을 늘리시려구요?\n너무 급격한 벌크업은 살크업 가능성이 높아요, 한번만 다시 생각해보세요`
+  return `${durationLabel} 안에 ${formattedDelta}kg 증량을 목표로 하고 있어요.\n너무 빠른 증량은 지속 가능성이 낮을 수 있어 다시 확인해보세요.`
 }
 
 function convertDurationToDays(value: number, unit: GoalDurationUnit) {
@@ -639,13 +683,28 @@ function GoalSettingPage() {
         ]),
       ) as MealStructureByTab,
     )
-    setMealErrors((current) =>
-      ({
-        ...current,
-        [activeMealTab]: (current[activeMealTab] ?? []).map((error, index) =>
-          activeMeals[index]?.id === mealId ? { ...error, name: undefined } : error,
-        ),
-      }) as MealErrorsByTab,
+    setMealErrors((current) => ({
+      ...current,
+      [activeMealTab]: (current[activeMealTab] ?? []).map((error, index) =>
+        activeMeals[index]?.id === mealId ? { ...error, name: undefined } : error,
+      ),
+    }))
+  }
+
+  const handleMealOptionChange = (
+    mealId: string,
+    field: 'macroFocus' | 'amount',
+    value: MealMacroFocus | MealAmount,
+  ) => {
+    setMealStructure(
+      Object.fromEntries(
+        Object.entries(mealStructure).map(([tabKey, meals]) => [
+          tabKey,
+          tabKey === activeMealTab
+            ? meals.map((meal) => (meal.id === mealId ? { ...meal, [field]: value } : meal))
+            : meals,
+        ]),
+      ) as MealStructureByTab,
     )
   }
 
@@ -747,7 +806,7 @@ function GoalSettingPage() {
     }
 
     setErrors({})
-    setMealErrors([])
+    setMealErrors(createEmptyMealErrors())
 
     const nextWarnings = collectWarnings(
       selectedGoal,
@@ -768,9 +827,9 @@ function GoalSettingPage() {
     <PageLayout>
       <PageShell>
         <Header>
-          <StepTitle>Step3 언제까지, 얼마나 바뀌고 싶은지 정해보세요</StepTitle>
+          <StepTitle>Step3 목표와 식사 구조를 정리해보세요</StepTitle>
           <Description>
-            현재 체중을 기준으로 목표 체중과 기간을 설정해보세요
+            현재 체중을 기준으로 목표 체중과 기간, 식사 구조를 함께 설정해요.
           </Description>
         </Header>
 
@@ -780,7 +839,7 @@ function GoalSettingPage() {
           </SummaryText>
         </SummaryCard>
 
-        <ContentForm ref={formRef} onSubmit={handleSubmit}>
+        <ContentForm id="daily-meal-form" ref={formRef} onSubmit={handleSubmit}>
           <GoalCard>
             <Header>
               <Question>{QUESTION_COPY[selectedGoal]}</Question>
@@ -849,8 +908,9 @@ function GoalSettingPage() {
                     </TabButton>
                   ))}
                 </TabList>
-                <SectionTitle>하루에 얼마나 드실 수 있으세요?</SectionTitle>
+                <SectionTitle>하루 식사는 어떻게 하고 싶으세요?</SectionTitle>
               </MealCardHeader>
+
               <MealList>
                 {activeMeals.map((meal, index) => (
                   <div key={meal.id}>
@@ -873,7 +933,8 @@ function GoalSettingPage() {
                           ↓
                         </OrderButton>
                       </OrderButtons>
-                      <div>
+
+                      <MealNameField>
                         <MealTextInput
                           id={`meal-name-${meal.id}`}
                           name={`meal-name-${meal.id}`}
@@ -885,11 +946,52 @@ function GoalSettingPage() {
                         {activeMealErrors[index]?.name ? (
                           <FieldErrorText>{activeMealErrors[index]?.name}</FieldErrorText>
                         ) : null}
-                      </div>
+                      </MealNameField>
+
+                      <MealSelectField>
+                        <MealSelect
+                          aria-label={`${meal.name || `식사 ${index + 1}`} 영양소 중심`}
+                          value={meal.macroFocus}
+                          onChange={(event) =>
+                            handleMealOptionChange(
+                              meal.id,
+                              'macroFocus',
+                              event.target.value as MealMacroFocus,
+                            )
+                          }
+                        >
+                          {(Object.keys(MACRO_FOCUS_LABELS) as MealMacroFocus[]).map((option) => (
+                            <option key={option} value={option}>
+                              {MACRO_FOCUS_LABELS[option]}
+                            </option>
+                          ))}
+                        </MealSelect>
+                      </MealSelectField>
+
+                      <MealSelectField>
+                        <MealSelect
+                          aria-label={`${meal.name || `식사 ${index + 1}`} 양`}
+                          value={meal.amount}
+                          onChange={(event) =>
+                            handleMealOptionChange(
+                              meal.id,
+                              'amount',
+                              event.target.value as MealAmount,
+                            )
+                          }
+                        >
+                          {(Object.keys(MEAL_AMOUNT_LABELS) as MealAmount[]).map((option) => (
+                            <option key={option} value={option}>
+                              {MEAL_AMOUNT_LABELS[option]}
+                            </option>
+                          ))}
+                        </MealSelect>
+                      </MealSelectField>
+
                       <RemoveMealButton
                         type="button"
-                        aria-label={`${meal.name || `식사 ${index + 1}`} 삭제`}
-                        title={`${meal.name || `식사 ${index + 1}`} 삭제`}
+                        aria-label={`${meal.name || `식사 ${index + 1}`} 제거`}
+                        title={`${meal.name || `식사 ${index + 1}`} 제거`}
                         disabled={activeMeals.length <= 1}
                         onClick={() => handleRemoveMeal(meal.id)}
                       >
@@ -914,6 +1016,7 @@ function GoalSettingPage() {
                   </div>
                 ))}
               </MealList>
+
               <InlineButtonRow>
                 <AddMealButton
                   type="button"
@@ -924,29 +1027,29 @@ function GoalSettingPage() {
                   식사 추가하기
                 </AddMealButton>
               </InlineButtonRow>
-
-              <FooterActions>
-                <Button type="submit" $fullWidth>
-                  다음
-                </Button>
-                <Button
-                  type="button"
-                  $variant="secondary"
-                  $fullWidth
-                  onClick={() => navigateTo(ROUTES.result)}
-                >
-                  뒤로가기
-                </Button>
-              </FooterActions>
             </MealSection>
           </MealCard>
         </ContentForm>
+
+        <FixedBottomActions maxWidth="680px">
+          <Button type="submit" form="daily-meal-form" $fullWidth>
+            하루 식단 확인하기
+          </Button>
+          <Button
+            type="button"
+            $variant="secondary"
+            $fullWidth
+            onClick={() => navigateTo(ROUTES.result)}
+          >
+            하루 권장 칼로리 확인하기
+          </Button>
+        </FixedBottomActions>
       </PageShell>
 
       {isModalOpen ? (
         <Overlay>
           <ModalCard>
-            <ModalTitle>한번 더 확인해보세요</ModalTitle>
+            <ModalTitle>한 번 더 확인해보세요</ModalTitle>
             <WarningList>
               {warningMessages.map((message) => (
                 <li key={message}>{message}</li>

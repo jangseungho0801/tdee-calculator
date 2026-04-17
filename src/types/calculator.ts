@@ -49,10 +49,15 @@ export type GoalSettingData = {
   durationUnit: GoalDurationUnit
 }
 
+export type MealMacroFocus = 'carb' | 'protein' | 'fat'
+
+export type MealAmount = 'small' | 'normal' | 'large'
+
 export type MealStructureItem = {
   id: string
   name: string
-  time: string
+  macroFocus: MealMacroFocus
+  amount: MealAmount
 }
 
 export type MealStructureTabKey = 'weekday' | 'weekend'
